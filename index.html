@@ -2536,8 +2536,8 @@
         <label><input type="radio" name="${laudoKey}" value="S"> S</label>
         <label><input type="radio" name="${laudoKey}" value="N"> N</label>
       </div>` : ''}
-      <label>Nº controle:</label>
-      <input type="text" placeholder="___________" style="width:120px;" data-laudo="${laudoKey}__ctrl">
+      ${(laudoName !== 'Talabarte' && laudoName !== 'Trava Quedas') ? `<label>Nº controle:</label>
+      <input type="text" placeholder="___________" style="width:120px;" data-laudo="${laudoKey}__ctrl">` : ''}
       ${hasValidade ? `<label>Validade:</label><input type="text" placeholder="__/__/____" style="width:100px;" data-laudo="${laudoKey}__val">` : ''}
     </div>`;
       });
