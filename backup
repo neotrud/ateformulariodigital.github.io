@@ -1,0 +1,3837 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Formulários ATE – CEMIG</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+    :root {
+      --cemig-blue: #00a651;
+      /* cor principal (azul escuro) */
+      --cemig-light: #8cc63f;
+      /* azul claro / destaques */
+      --accent: #e8a900;
+      /* amarelo / avisos */
+      --border: #b0bec5;
+      /* bordas */
+      --bg: #f4f6f9;
+      /* fundo da página */
+      --bg-section: #ffffff;
+      /* fundo dos cards */
+      --bg-header: #00a651;
+      /* fundo do cabeçalho */
+      --text: #1a2332;
+      /* texto principal */
+      --text-light: #546e7a;
+      /* texto secundário */
+      --ok: #2e7d32;
+      /* verde (conforme) */
+      --warn: #c62828;
+      /* vermelho (não conforme) */
+      --row-alt: #eef2f7;
+      /* linhas alternadas tabela */
+      --pending-bg: #fff8e1;
+      /* fundo campo pendente */
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'IBM Plex Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    .page-wrapper {
+      max-width: 960px;
+      margin: 24px auto;
+      padding: 0 16px 60px;
+    }
+
+    /* ── HOME SCREEN ── */
+    .home-screen {
+      text-align: center;
+      padding-top: 60px;
+    }
+
+    .home-logo {
+      width: 120px;
+      height: 120px;
+      background: var(--cemig-blue);
+      border-radius: 16px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'IBM Plex Mono', monospace;
+      font-weight: 700;
+      font-size: 28px;
+      color: white;
+      letter-spacing: -1px;
+      margin-bottom: 24px;
+      box-shadow: 0 8px 32px rgba(0, 61, 122, 0.3);
+    }
+
+    .home-title {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--cemig-blue);
+      margin-bottom: 6px;
+    }
+
+    .home-subtitle {
+      font-size: 14px;
+      color: var(--text-light);
+      margin-bottom: 40px;
+    }
+
+    .form-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 20px;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .form-card {
+      background: white;
+      border: 2px solid #e0e6ed;
+      border-radius: 12px;
+      padding: 28px 24px;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: left;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .form-card:hover {
+      border-color: var(--cemig-light);
+      box-shadow: 0 6px 24px rgba(0, 102, 204, 0.15);
+      transform: translateY(-2px);
+    }
+
+    .form-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: var(--cemig-blue);
+    }
+
+    .form-card-icon {
+      font-size: 32px;
+      margin-bottom: 12px;
+    }
+
+    .form-card h3 {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--cemig-blue);
+      margin-bottom: 6px;
+    }
+
+    .form-card p {
+      font-size: 12px;
+      color: var(--text-light);
+      line-height: 1.5;
+    }
+
+    /* ── HEADER ── */
+    .form-header {
+      background: var(--bg-header);
+      color: white;
+      padding: 20px 28px;
+      border-radius: 8px 8px 0 0;
+      display: flex;
+      align-items: center;
+      gap: 24px;
+    }
+
+    .cemig-logo {
+      width: 72px;
+      height: 72px;
+      background: white;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'IBM Plex Mono', monospace;
+      font-weight: 700;
+      font-size: 22px;
+      color: var(--cemig-blue);
+      letter-spacing: -1px;
+      flex-shrink: 0;
+    }
+
+    .form-header h1 {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+    }
+
+    .form-header h2 {
+      font-size: 13px;
+      font-weight: 400;
+      opacity: 0.85;
+      margin-top: 4px;
+    }
+
+    .form-header .sub {
+      font-size: 12px;
+      opacity: 0.7;
+      margin-top: 6px;
+      font-style: italic;
+    }
+
+    /* ── CARD ── */
+    .card {
+      background: var(--bg-section);
+      border: 1px solid var(--border);
+      border-top: none;
+      padding: 20px 24px;
+    }
+
+    .card:last-of-type {
+      border-radius: 0 0 8px 8px;
+    }
+
+    .section-title {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      color: var(--cemig-blue);
+      border-bottom: 2px solid var(--cemig-light);
+      padding-bottom: 6px;
+      margin-bottom: 16px;
+    }
+
+    /* ── GRID INPUTS ── */
+    .grid {
+      display: grid;
+      gap: 12px;
+    }
+
+    .g2 {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .g3 {
+      grid-template-columns: 1fr 1fr 1fr;
+    }
+
+    .g4 {
+      grid-template-columns: 1fr 1fr 1fr 1fr;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .field label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-light);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .field input,
+    .field select,
+    .field textarea {
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 7px 10px;
+      font-family: 'IBM Plex Sans', sans-serif;
+      font-size: 13px;
+      color: var(--text);
+      background: white;
+      transition: border-color 0.15s;
+    }
+
+    .field input:focus,
+    .field select:focus,
+    .field textarea:focus {
+      outline: none;
+      border-color: var(--cemig-light);
+      box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+    }
+
+    .field textarea {
+      resize: vertical;
+      min-height: 72px;
+    }
+
+    /* ── TABLE ── */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    thead tr {
+      background: var(--cemig-blue);
+      color: white;
+    }
+
+    thead th {
+      padding: 8px 10px;
+      text-align: left;
+      font-weight: 600;
+      font-size: 11px;
+      letter-spacing: 0.5px;
+    }
+
+    tbody tr:nth-child(even) {
+      background: var(--row-alt);
+    }
+
+    tbody tr:hover {
+      background: #e3eaf5;
+    }
+
+    tbody td {
+      padding: 7px 10px;
+      border-bottom: 1px solid #dde3ec;
+      vertical-align: top;
+    }
+
+    tbody td.item-num {
+      font-family: 'IBM Plex Mono', monospace;
+      font-weight: 600;
+      color: var(--cemig-blue);
+      width: 42px;
+    }
+
+    tbody td.item-qty {
+      text-align: center;
+      font-weight: 700;
+      color: var(--cemig-blue);
+      width: 50px;
+    }
+
+    tbody td.item-uni {
+      text-align: center;
+      color: var(--text-light);
+      width: 42px;
+    }
+
+    .qty-input {
+      width: 70px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 4px 6px;
+      text-align: center;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 12px;
+      background: var(--pending-bg);
+    }
+
+    .qty-input:focus {
+      outline: none;
+      border-color: var(--cemig-light);
+    }
+
+    /* ── RADIO NA/C/NC ── */
+    .na-c-nc {
+      display: flex;
+      gap: 0;
+    }
+
+    .na-c-nc label {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 42px;
+      height: 30px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      background: white;
+      color: var(--text-light);
+      transition: all 0.15s;
+    }
+
+    .na-c-nc label:first-child {
+      border-radius: 4px 0 0 4px;
+    }
+
+    .na-c-nc label:last-child {
+      border-radius: 0 4px 4px 0;
+    }
+
+    .na-c-nc label:not(:first-child) {
+      border-left: none;
+    }
+
+    .na-c-nc input {
+      display: none;
+    }
+
+    .na-c-nc input:checked+span {
+      font-weight: 700;
+    }
+
+    .na-c-nc input[value="NA"]:checked~span,
+    .na-c-nc label:has(input[value="NA"]:checked) {
+      background: #e0e0e0;
+      color: #555;
+    }
+
+    .na-c-nc label:has(input[value="C"]:checked) {
+      background: #c8e6c9;
+      color: #1b5e20;
+    }
+
+    .na-c-nc label:has(input[value="NC"]:checked) {
+      background: #ffcdd2;
+      color: #b71c1c;
+    }
+
+    /* ── LAUDO ROW ── */
+    .laudo-row {
+      background: #f0f4ff;
+      border-left: 3px solid var(--cemig-light);
+      padding: 10px 14px;
+      margin: 4px 0 8px;
+      border-radius: 0 4px 4px 0;
+    }
+
+    .laudo-row .laudo-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .laudo-row label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-light);
+    }
+
+    .laudo-row input[type="text"] {
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      padding: 4px 8px;
+      font-size: 12px;
+      font-family: 'IBM Plex Mono', monospace;
+      width: 130px;
+      background: white;
+    }
+
+    .radio-group {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .radio-group label {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      color: var(--text);
+    }
+
+    .radio-group input[type="radio"] {
+      accent-color: var(--cemig-light);
+    }
+
+    .fab-row {
+      margin-top: 8px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .fab-row span {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-light);
+      text-transform: uppercase;
+    }
+
+    .checkbox-inline {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .checkbox-inline input {
+      accent-color: var(--cemig-light);
+    }
+
+    /* ── LOCATION ── */
+    .location-group {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .location-group label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    .location-group input[type="radio"] {
+      accent-color: var(--cemig-blue);
+      width: 16px;
+      height: 16px;
+    }
+
+    /* ── CHECKLIST ── */
+    .checklist-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 7px 0;
+      border-bottom: 1px solid #eee;
+    }
+
+    .checklist-item:last-child {
+      border-bottom: none;
+    }
+
+    .checklist-item input[type="checkbox"] {
+      accent-color: var(--cemig-blue);
+      margin-top: 2px;
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
+    }
+
+    .checklist-item label {
+      font-size: 12px;
+      cursor: pointer;
+      line-height: 1.4;
+    }
+
+    /* ── BTN ── */
+    .btn-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 16px 24px;
+      background: white;
+      border: 1px solid var(--border);
+      border-top: 2px solid var(--cemig-blue);
+      border-radius: 0 0 8px 8px;
+      position: sticky;
+      bottom: 0;
+      flex-wrap: wrap;
+      z-index: 100;
+    }
+
+    .btn-bar-left {
+      display: flex;
+      gap: 10px;
+    }
+
+    .btn-bar-right {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      padding: 10px 20px;
+      border-radius: 5px;
+      font-family: 'IBM Plex Sans', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: all 0.15s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-primary {
+      background: var(--cemig-blue);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: #002a57;
+    }
+
+    .btn-excel {
+      background: #1d6f42;
+      color: white;
+    }
+
+    .btn-excel:hover {
+      background: #145a34;
+    }
+
+    .btn-pdf {
+      background: var(--warn);
+      color: white;
+    }
+
+    .btn-pdf:hover {
+      background: #a31f1f;
+    }
+
+    .btn-back {
+      background: transparent;
+      color: var(--text-light);
+      border: 1px solid var(--border);
+    }
+
+    .btn-back:hover {
+      background: var(--bg);
+    }
+
+    .btn-reset {
+      background: transparent;
+      color: var(--text-light);
+      border: 1px solid var(--border);
+    }
+
+    .btn-reset:hover {
+      background: var(--bg);
+    }
+
+    .note-box {
+      background: #fff8e1;
+      border-left: 4px solid var(--accent);
+      padding: 10px 14px;
+      border-radius: 0 4px 4px 0;
+      font-size: 12px;
+      color: #5d4037;
+      margin-bottom: 12px;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    /* ── PRINT ── */
+    @media print {
+      body {
+        background: white;
+        font-size: 11px;
+      }
+
+      .page-wrapper {
+        max-width: 100%;
+        margin: 0;
+        padding: 0;
+      }
+
+      .btn-bar,
+      .home-screen {
+        display: none !important;
+      }
+
+      .card {
+        page-break-inside: avoid;
+      }
+
+      .form-header {
+        background: #00a651 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+
+      thead tr {
+        background: #00a651 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+
+      .na-c-nc label:has(input[value="NA"]:checked) {
+        background: #e0e0e0 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+
+      .na-c-nc label:has(input[value="C"]:checked) {
+        background: #c8e6c9 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+
+      .na-c-nc label:has(input[value="NC"]:checked) {
+        background: #ffcdd2 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+
+      table {
+        page-break-inside: auto;
+      }
+
+      tr {
+        page-break-inside: avoid;
+      }
+    }
+
+    @media (max-width: 600px) {
+
+      .g2,
+      .g3,
+      .g4 {
+        grid-template-columns: 1fr;
+      }
+
+      .form-cards {
+        grid-template-columns: 1fr;
+      }
+
+      .btn-bar {
+        flex-direction: column;
+      }
+
+      .btn-bar-left,
+      .btn-bar-right {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+
+    /* ── PHOTO UPLOAD ── */
+    .photo-upload-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background: var(--cemig-blue);
+      color: white;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+      transition: background 0.15s;
+    }
+
+    .photo-upload-label:hover {
+      background: var(--cemig-light);
+    }
+
+    .photo-upload-label input[type="file"] {
+      display: none;
+    }
+
+    .image-preview-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .image-preview-item {
+      position: relative;
+    }
+
+    .image-preview-item img {
+      width: 130px;
+      height: 130px;
+      object-fit: cover;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+      display: block;
+    }
+
+    .image-preview-item .remove-photo {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      background: rgba(198, 40, 40, 0.85);
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      font-size: 12px;
+      line-height: 20px;
+      text-align: center;
+      cursor: pointer;
+      padding: 0;
+    }
+
+    @media print {
+      .photo-upload-label {
+        display: none !important;
+      }
+
+      .image-preview-container img {
+        width: 160px;
+        height: 160px;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+        page-break-inside: avoid;
+      }
+    }
+
+    /* ── NC COMMENT ── */
+    .nc-comment {
+      display: none;
+      margin-top: 6px;
+    }
+
+    .nc-comment textarea {
+      width: 100%;
+      min-height: 48px;
+      max-height: 100px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 5px 8px;
+      font-family: 'IBM Plex Sans', sans-serif;
+      font-size: 12px;
+      color: var(--text);
+      background: white;
+      resize: vertical;
+    }
+
+    .nc-comment textarea:focus {
+      outline: none;
+      border-color: var(--cemig-light);
+      box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+    }
+
+    .nc-comment.visible {
+      display: block;
+    }
+
+    /* ── SESSION BAR ── */
+    .session-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #e8f5e9;
+      border: 1px solid var(--cemig-light);
+      border-radius: 6px;
+      padding: 8px 16px;
+      margin-bottom: 0;
+      font-size: 12px;
+      color: var(--text);
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .session-bar .session-id {
+      font-family: 'IBM Plex Mono', monospace;
+      font-weight: 700;
+      color: var(--cemig-blue);
+      font-size: 13px;
+      letter-spacing: 1px;
+    }
+
+    .session-bar .session-status {
+      font-size: 11px;
+      color: var(--text-light);
+    }
+
+    .session-bar .session-status.saving {
+      color: var(--accent);
+    }
+
+    .session-bar .session-status.saved {
+      color: var(--ok);
+    }
+
+    .session-bar .session-status.concluido {
+      color: white;
+      background: #2e7d32;
+      padding: 2px 10px;
+      border-radius: 4px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+
+    .session-bar .session-copy {
+      background: none;
+      border: 1px solid var(--cemig-light);
+      border-radius: 4px;
+      padding: 3px 8px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      color: var(--cemig-blue);
+    }
+
+    /* ── HISTÓRICO NA HOME ── */
+    .history-section {
+      margin-top: 36px;
+      max-width: 700px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .history-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-light);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 12px;
+    }
+
+    .history-resume {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .history-resume input {
+      flex: 1;
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      padding: 8px 12px;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 13px;
+      letter-spacing: 1px;
+    }
+
+    .history-resume input:focus {
+      outline: none;
+      border-color: var(--cemig-light);
+    }
+
+    .history-resume button {
+      padding: 8px 18px;
+      background: var(--cemig-blue);
+      color: white;
+      border: none;
+      border-radius: 5px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .history-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 10px 14px;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .history-item .hi-id {
+      font-family: 'IBM Plex Mono', monospace;
+      font-weight: 700;
+      color: var(--cemig-blue);
+      font-size: 13px;
+      flex-shrink: 0;
+    }
+
+    .history-item .hi-center {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .history-item .hi-meta {
+      font-size: 11px;
+      color: var(--text-light);
+    }
+
+    .hi-status {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      text-transform: uppercase;
+      margin-bottom: 2px;
+    }
+
+    .hi-status.em-andamento {
+      background: #fff3e0;
+      color: #e65100;
+      border: 1px solid #ffcc80;
+    }
+
+    .hi-status.concluido {
+      background: #e8f5e9;
+      color: #2e7d32;
+      border: 1px solid #a5d6a7;
+    }
+
+    .history-item .hi-btns {
+      display: flex;
+      gap: 8px;
+    }
+
+    .history-item .hi-btns button {
+      padding: 4px 12px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      background: white;
+      color: var(--text);
+    }
+
+    .history-item .hi-btns button.resume {
+      background: var(--cemig-blue);
+      color: white;
+      border-color: var(--cemig-blue);
+    }
+
+    .history-empty {
+      font-size: 12px;
+      color: var(--text-light);
+      text-align: center;
+      padding: 16px;
+    }
+
+    @media print {
+      .session-bar {
+        display: none !important;
+      }
+    }
+
+    .btn-save {
+      background: #1976d2;
+      color: white;
+    }
+
+    .btn-save:hover {
+      background: #1565c0;
+    }
+
+    .btn-finalizar {
+      background: #2e7d32;
+      color: white;
+    }
+
+    .btn-finalizar:hover {
+      background: #1b5e20;
+    }
+
+    /* ── EXPORT OVERLAY ── */
+    .export-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.65);
+      z-index: 9999;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(4px);
+    }
+
+    .export-overlay.active {
+      display: flex;
+    }
+
+    .export-overlay-box {
+      background: white;
+      border-radius: 12px;
+      padding: 40px 48px;
+      text-align: center;
+      box-shadow: 0 12px 48px rgba(0, 0, 0, 0.3);
+      max-width: 360px;
+      width: 90%;
+    }
+
+    .export-spinner {
+      width: 48px;
+      height: 48px;
+      border: 4px solid #e0e6ed;
+      border-top: 4px solid var(--cemig-blue);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 20px;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .export-overlay-box h3 {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 8px;
+    }
+
+    .export-overlay-box p {
+      font-size: 13px;
+      color: var(--text-light);
+      line-height: 1.5;
+    }
+
+    @media print {
+      .export-overlay {
+        display: none !important;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="page-wrapper">
+
+    <!-- ═══════════════ HOME SCREEN ═══════════════ -->
+    <div id="home-screen" class="home-screen">
+      <div class="home-logo">CEMIG</div>
+      <div class="home-title">FORMULÁRIOS ATE</div>
+      <div class="home-subtitle">Avaliação Técnica em Empreiteira – Selecione o formulário</div>
+      <div class="form-cards">
+        <div class="form-card" onclick="showForm('infra')">
+          <div class="form-card-icon">🏢</div>
+          <h3>Infraestrutura Administrativa</h3>
+          <p>Avaliação das condições de infraestrutura administrativa da empreiteira: instalações, segurança, higiene e
+            conforto.</p>
+        </div>
+        <div class="form-card" onclick="showForm('moto')">
+          <div class="form-card-icon">🏍️</div>
+          <h3>Equipes de Motociclistas</h3>
+          <p>Inspeção de ferramental, EPIs e veículo das equipes de motociclistas (MO1: 1 instalador motociclista).</p>
+        </div>
+        <div class="form-card" onclick="showForm('es2')">
+          <div class="form-card-icon">⚡</div>
+          <h3>Multifuncional ES2</h3>
+          <p>Equipe de serviços – 2 componentes (2 instaladores). Ferramentas, EPIs, veículo e Kit Antirreprova.</p>
+        </div>
+        <div class="form-card" onclick="showForm('amb')">
+          <div class="form-card-icon">🌱</div>
+          <h3>Parte Ambiental</h3>
+          <p>Check list orientativo para avaliação ambiental em base operativa de empreiteiras.</p>
+        </div>
+        <div class="form-card" onclick="showForm('almox')">
+          <div class="form-card-icon">📦</div>
+          <h3>Almoxarifado</h3>
+          <p>Avaliação das condições do almoxarifado da empreiteira.</p>
+        </div>
+      </div>
+
+      <!-- RETOMAR SESSÃO -->
+      <div class="history-section">
+          <div class="history-title">Retomar Preenchimento</div>
+          <div class="history-resume">
+            <input type="text" id="resume-input" placeholder="Cole o ID da sessão aqui..." maxlength="20">
+            <button onclick="resumeSession()">Retomar</button>
+          </div>
+          <div class="history-title">Sessões Recentes</div>
+          <div id="history-list" class="history-list">
+            <div class="history-empty">Nenhuma sessão salva ainda.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════════════ FORM: INFRAESTRUTURA ═══════════════ -->
+      <div id="form-infra" class="hidden">
+        <div class="session-bar">
+          <div>
+            <span
+              style="font-size:11px;font-weight:600;color:var(--text-light);text-transform:uppercase;letter-spacing:0.5px;">ID
+              da Sessão</span><br>
+            <span class="session-id" id="session-id-display">–</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span class="session-status" id="session-status">Aguardando alterações...</span>
+            <button class="session-copy" onclick="copySessionId()" title="Copiar ID">📋 Copiar ID</button>
+          </div>
+        </div>
+        <div class="form-header">
+          <div class="cemig-logo">cemig</div>
+          <div>
+            <h1>FORMULÁRIO PARA AVALIAÇÃO TÉCNICA EM EMPREITEIRA – ATE</h1>
+            <h2>INFRAESTRUTURA ADMINISTRATIVA</h2>
+          </div>
+        </div>
+
+        <!-- AGENTES INFRA -->
+        <div class="card">
+          <div class="section-title">Agente(s) Executor(es) da Inspeção</div>
+          <div class="grid g2" style="margin-bottom:10px;">
+            <div class="field"><label>Agente 1</label><input type="text" data-field="infra-agente1"></div>
+            <div class="field"><label>Matrícula</label><input type="text" data-field="infra-mat1"></div>
+          </div>
+          <div class="grid g2" style="margin-bottom:10px;">
+            <div class="field"><label>Agente 2</label><input type="text" data-field="infra-agente2"></div>
+            <div class="field"><label>Matrícula</label><input type="text" data-field="infra-mat2"></div>
+          </div>
+          <div class="grid g2">
+            <div class="field"><label>Agente 3</label><input type="text" data-field="infra-agente3"></div>
+            <div class="field"><label>Matrícula</label><input type="text" data-field="infra-mat3"></div>
+          </div>
+        </div>
+
+        <!-- ENDEREÇO -->
+        <div class="card">
+          <div class="section-title">Endereço</div>
+          <div class="grid g2" style="margin-bottom:10px;">
+            <div class="field"><label>Av./Rua</label><input type="text" data-field="infra-endereco"></div>
+            <div class="field"><label>Número</label><input type="text" data-field="infra-numero"></div>
+          </div>
+          <div class="grid g2">
+            <div class="field"><label>Bairro</label><input type="text" data-field="infra-bairro"></div>
+            <div class="field"><label>Cidade</label><input type="text" data-field="infra-cidade"></div>
+          </div>
+        </div>
+
+        <!-- COMPONENTES DA EMPRESA -->
+        <div class="card">
+          <div class="section-title">Componentes da Empresa</div>
+          <table>
+            <thead>
+              <tr>
+                <th>Nome do Responsável</th>
+                <th>Matrícula</th>
+                <th>Função</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><input type="text" style="width:100%;border:1px solid #ddd;padding:4px 6px;border-radius:3px;"
+                    data-field="infra-resp-nome"></td>
+                <td><input type="text"
+                    style="width:100%;border:1px solid #ddd;padding:4px 6px;border-radius:3px;font-family:'IBM Plex Mono',monospace;"
+                    placeholder="Matrícula" data-field="infra-resp-cpf"></td>
+                <td><input type="text" style="width:100%;border:1px solid #ddd;padding:4px 6px;border-radius:3px;"
+                    data-field="infra-resp-funcao"></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- ITENS DE AVALIAÇÃO -->
+        <div class="card">
+          <div class="section-title">Itens de Avaliação</div>
+          <p style="font-size:11px;color:var(--text-light);margin-bottom:10px;">N-A = Não Aplicável &nbsp;|&nbsp; C =
+            Conforme &nbsp;|&nbsp; NC = Não Conforme</p>
+          <table>
+            <thead>
+              <tr>
+                <th style="width:42px;">Item</th>
+                <th>Descrição</th>
+                <th style="width:140px;">Avaliação</th>
+              </tr>
+            </thead>
+            <tbody id="tb-infra-items"></tbody>
+          </table>
+        </div>
+
+        <!-- NOTAS -->
+        <div class="card">
+          <div class="section-title">Notas</div>
+          <div class="note-box">
+            1 – N-A = Não aplicável / C = Conforme / NC = Não Conforme<br>
+            2 – Considera-se como Base Operacional o local de início e término da jornada de trabalho das equipes.
+          </div>
+          <div class="field"><label>Observações</label><textarea data-field="infra-obs"
+              placeholder="Registre aqui observações relevantes..."></textarea></div>
+        </div>
+
+        <div class="card">
+          <div class="section-title">Anexos Fotográficos</div>
+          <p style="font-size:12px;color:var(--text-light);margin-bottom:12px;">As fotos selecionadas aparecerão no PDF
+            gerado.</p>
+          <label class="photo-upload-label">
+            📷 Selecionar Fotos
+            <input type="file" accept="image/*" multiple onchange="handlePhotoUpload(event, 'preview-infra')">
+          </label>
+          <div id="preview-infra" class="image-preview-container"></div>
+        </div>
+
+        <div class="card">
+          <div class="section-title">Assinaturas</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:40px;margin-top:24px;margin-bottom:8px;">
+            <div style="text-align:center;">
+              <div
+                style="border-top:1.5px solid var(--text);padding-top:8px;margin-top:60px;font-size:11px;font-weight:600;color:var(--text-light);letter-spacing:0.4px;">
+                Empregado Inspecionado</div>
+            </div>
+            <div style="text-align:center;">
+              <div
+                style="border-top:1.5px solid var(--text);padding-top:8px;margin-top:60px;font-size:11px;font-weight:600;color:var(--text-light);letter-spacing:0.4px;">
+                Responsável Local da Contratada</div>
+            </div>
+            <div style="text-align:center;">
+              <div
+                style="border-top:1.5px solid var(--text);padding-top:8px;margin-top:60px;font-size:11px;font-weight:600;color:var(--text-light);letter-spacing:0.4px;">
+                Agente de Inspeção</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- BOTÕES -->
+        <div class="btn-bar">
+          <div class="btn-bar-left">
+            <button class="btn btn-back" onclick="goHome()">← Voltar</button>
+            <button class="btn btn-reset" onclick="resetForm('infra')">Limpar</button>
+          </div>
+          <div class="btn-bar-right">
+            <button class="btn btn-save" onclick="saveManual(this)">💾 Salvar</button>
+            <button class="btn btn-finalizar" onclick="finalizarFormulario(this)">✅ Finalizar</button>
+            <button class="btn btn-excel" onclick="exportExcel('infra')">📊 Exportar Excel</button>
+            <button class="btn btn-pdf" onclick="exportPDF()">📄 Exportar PDF</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════════════ FORM: ALMOXARIFADO ═══════════════ -->
+      <div id="form-almox" class="hidden">
+        <div class="session-bar">
+          <div>
+            <span
+              style="font-size:11px;font-weight:600;color:var(--text-light);text-transform:uppercase;letter-spacing:0.5px;">ID
+              da Sessão</span><br>
+            <span class="session-id" id="session-id-display">–</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span class="session-status" id="session-status">Aguardando alterações...</span>
+            <button class="session-copy" onclick="copySessionId()" title="Copiar ID">📋 Copiar ID</button>
+          </div>
+        </div>
+        <div class="form-header">
+          <div class="cemig-logo">cemig</div>
+          <div>
+            <h1>FORMULÁRIO PARA AVALIAÇÃO TÉCNICA EM EMPREITEIRA – ATE</h1>
+            <h2>ALMOXARIFADO</h2>
+          </div>
+        </div>
+
+        <!-- AGENTES INFRA -->
+        <div class="card">
+          <div class="section-title">Agente(s) Executor(es) da Inspeção</div>
+          <div class="grid g2" style="margin-bottom:10px;">
+            <div class="field"><label>Agente 1</label><input type="text" data-field="almox-agente1"></div>
+            <div class="field"><label>Matrícula</label><input type="text" data-field="almox-mat1"></div>
+          </div>
+          <div class="grid g2" style="margin-bottom:10px;">
+            <div class="field"><label>Agente 2</label><input type="text" data-field="almox-agente2"></div>
+            <div class="field"><label>Matrícula</label><input type="text" data-field="almox-mat2"></div>
+          </div>
+          <div class="grid g2">
+            <div class="field"><label>Agente 3</label><input type="text" data-field="almox-agente3"></div>
+            <div class="field"><label>Matrícula</label><input type="text" data-field="almox-mat3"></div>
+          </div>
+        </div>
+
+        <!-- ENDEREÇO -->
+        <div class="card">
+          <div class="section-title">Endereço</div>
+          <div class="grid g2" style="margin-bottom:10px;">
+            <div class="field"><label>Av./Rua</label><input type="text" data-field="almox-endereco"></div>
+            <div class="field"><label>Número</label><input type="text" data-field="almox-numero"></div>
+          </div>
+          <div class="grid g2">
+            <div class="field"><label>Bairro</label><input type="text" data-field="almox-bairro"></div>
+            <div class="field"><label>Cidade</label><input type="text" data-field="almox-cidade"></div>
+          </div>
+        </div>
+
+        <!-- COMPONENTES DA EMPRESA -->
+        <div class="card">
+          <div class="section-title">Componentes da Empresa</div>
+          <table>
+            <thead>
+              <tr>
+                <th>Nome do Responsável</th>
+                <th>Matrícula</th>
+                <th>Função</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><input type="text" style="width:100%;border:1px solid #ddd;padding:4px 6px;border-radius:3px;"
+                    data-field="almox-resp-nome"></td>
+                <td><input type="text"
+                    style="width:100%;border:1px solid #ddd;padding:4px 6px;border-radius:3px;font-family:'IBM Plex Mono',monospace;"
+                    placeholder="Matrícula" data-field="almox-resp-mat"></td>
+                <td><input type="text" style="width:100%;border:1px solid #ddd;padding:4px 6px;border-radius:3px;"
+                    data-field="almox-resp-funcao"></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- ITENS DE AVALIAÇÃO -->
+        <div class="card">
+          <div class="section-title">Itens de Avaliação</div>
+          <p style="font-size:11px;color:var(--text-light);margin-bottom:10px;">N-A = Não Aplicável &nbsp;|&nbsp; C =
+            Conforme &nbsp;|&nbsp; NC = Não Conforme</p>
+          <table>
+            <thead>
+              <tr>
+                <th style="width:42px;">Item</th>
+                <th>Descrição</th>
+                <th style="width:140px;">Avaliação</th>
+              </tr>
+            </thead>
+            <tbody id="tb-almox-items"></tbody>
+          </table>
+        </div>
+
+        <!-- NOTAS -->
+        <div class="card">
+          <div class="section-title">Notas</div>
+          <div class="note-box">
+            1 – N-A = Não aplicável / C = Conforme / NC = Não Conforme<br>
+            2 – Considera-se como Base Operacional o local de início e término da jornada de trabalho das equipes.
+          </div>
+          <div class="field"><label>Observações</label><textarea data-field="almox-obs"
+              placeholder="Registre aqui observações relevantes..."></textarea></div>
+        </div>
+
+        <div class="card">
+          <div class="section-title">Anexos Fotográficos</div>
+          <p style="font-size:12px;color:var(--text-light);margin-bottom:12px;">As fotos selecionadas aparecerão no PDF
+            gerado.</p>
+          <label class="photo-upload-label">
+            📷 Selecionar Fotos
+            <input type="file" accept="image/*" multiple onchange="handlePhotoUpload(event, 'preview-almox')">
+          </label>
+          <div id="preview-almox" class="image-preview-container"></div>
+        </div>
+
+        <div class="card">
+          <div class="section-title">Assinaturas</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:40px;margin-top:24px;margin-bottom:8px;">
+            <div style="text-align:center;">
+              <div
+                style="border-top:1.5px solid var(--text);padding-top:8px;margin-top:60px;font-size:11px;font-weight:600;color:var(--text-light);letter-spacing:0.4px;">
+                Empregado Inspecionado</div>
+            </div>
+            <div style="text-align:center;">
+              <div
+                style="border-top:1.5px solid var(--text);padding-top:8px;margin-top:60px;font-size:11px;font-weight:600;color:var(--text-light);letter-spacing:0.4px;">
+                Responsável Local da Contratada</div>
+            </div>
+            <div style="text-align:center;">
+              <div
+                style="border-top:1.5px solid var(--text);padding-top:8px;margin-top:60px;font-size:11px;font-weight:600;color:var(--text-light);letter-spacing:0.4px;">
+                Agente de Inspeção</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- BOTÕES -->
+        <div class="btn-bar">
+          <div class="btn-bar-left">
+            <button class="btn btn-back" onclick="goHome()">← Voltar</button>
+            <button class="btn btn-reset" onclick="resetForm('almox')">Limpar</button>
+          </div>
+          <div class="btn-bar-right">
+            <button class="btn btn-save" onclick="saveManual(this)">💾 Salvar</button>
+            <button class="btn btn-finalizar" onclick="finalizarFormulario(this)">✅ Finalizar</button>
+            <button class="btn btn-excel" onclick="exportExcel('almox')">📊 Exportar Excel</button>
+            <button class="btn btn-pdf" onclick="exportPDF()">📄 Exportar PDF</button>
+          </div>
+        </div>
+      </div>
+
+
+      <!-- ═══════════════ FORM: MOTOCICLISTAS ═══════════════ -->
+      <div id="form-moto" class="hidden">
+        <div class="session-bar">
+          <div>
+            <span
+              style="font-size:11px;font-weight:600;color:var(--text-light);text-transform:uppercase;letter-spacing:0.5px;">ID
+              da Sessão</span><br>
+            <span class="session-id" id="session-id-display">–</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span class="session-status" id="session-status">Aguardando alterações...</span>
+            <button class="session-copy" onclick="copySessionId()" title="Copiar ID">📋 Copiar ID</button>
+          </div>
+        </div>
+        <div class="form-header">
+          <div class="cemig-logo">CEMIG</div>
+          <div>
+            <h1>FORMULÁRIO PARA AVALIAÇÃO TÉCNICA EM EMPREITEIRA – ATE</h1>
+            <h2>EQUIPES DE MOTOCICLISTAS</h2>
+            <div class="sub">Estrutura de pessoal MO1: 1 Instalador motociclista</div>
+          </div>
+        </div>
+
+        <!-- AGENTES -->
+        <div class="card">
+          <div class="section-title">Agente(s) Executor(es) da Inspeção</div>
+          <div class="grid g2" style="margin-bottom:10px;">
+            <div class="field"><label>Agente 1</label><input type="text" data-field="moto-agente1"></div>
+            <div class="field"><label>Matrícula</label><input type="text" data-field="moto-mat1"></div>
+          </div>
+          <div class="grid g2" style="margin-bottom:10px;">
+            <div class="field"><label>Agente 2</label><input type="text" data-field="moto-agente2"></div>
+            <div class="field"><label>Matrícula</label><input type="text" data-field="moto-mat2"></div>
+          </div>
+          <div class="grid g2">
+            <div class="field"><label>Agente 3</label><input type="text" data-field="moto-agente3"></div>
+            <div class="field"><label>Matrícula</label><input type="text" data-field="moto-mat3"></div>
+          </div>
+        </div>
+
+        <!-- LOCAL E DATA -->
+        <div class="card">
+          <div class="grid g2">
+            <div class="field">
+              <label>Local da Inspeção</label>
+              <div class="location-group" style="margin-top:6px;">
+                <label><input type="radio" name="moto-local" value="Uberlândia"
+                    onchange="toggleOutro(this,'moto-outro-local')"> Uberlândia</label>
+                <label><input type="radio" name="moto-local" value="Ituiutaba"
+                    onchange="toggleOutro(this,'moto-outro-local')"> Ituiutaba</label>
+                <label><input type="radio" name="moto-local" value="Outro"
+                    onchange="toggleOutro(this,'moto-outro-local')"> Outro:</label>
+                <input type="text" id="moto-outro-local" class="hidden" placeholder="Especifique..."
+                  style="width:150px;border:1px solid #b0bec5;border-radius:4px;padding:4px 8px;font-size:12px;"
+                  data-field="moto-outro-local">
+              </div>
+            </div>
+            <div class="field"><label>Data</label><input type="date" data-field="moto-data"></div>
+          </div>
+        </div>
+
+        <!-- COMPONENTES DA EQUIPE -->
+        <div class="card">
+          <div class="section-title">Componentes da Equipe Apresentada</div>
+          <table>
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th>Matrícula</th>
+                <th>Cód. Crachá</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><input type="text" style="width:100%;border:1px solid #ddd;padding:4px 6px;border-radius:3px;"
+                    data-field="moto-nome1"></td>
+                <td><input type="text"
+                    style="width:100%;border:1px solid #ddd;padding:4px 6px;border-radius:3px;font-family:'IBM Plex Mono',monospace;"
+                    placeholder="Matrícula" data-field="moto-cpf1"></td>
+                <td><input type="text" style="width:100%;border:1px solid #ddd;padding:4px 6px;border-radius:3px;"
+                    data-field="moto-cracha1"></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- FERRAMENTAL -->
+        <div class="card">
+          <div class="section-title">Ferramental – MO1</div>
+          <table>
+            <thead>
+              <tr>
+                <th style="width:42px;">Item</th>
+                <th>Descrição</th>
+                <th style="width:45px;">Uni.</th>
+                <th style="width:50px;">MO1</th>
+                <th style="width:100px;">Qtd. Pendente</th>
+              </tr>
+            </thead>
+            <tbody id="tb-moto-ferramentas"></tbody>
+          </table>
+        </div>
+
+        <!-- EPIs -->
+        <div class="card">
+          <div class="section-title">EPIs</div>
+          <table>
+            <thead>
+              <tr>
+                <th style="width:42px;">Item</th>
+                <th>Descrição</th>
+                <th style="width:45px;">Uni.</th>
+                <th style="width:50px;">MO1</th>
+                <th style="width:100px;">Qtd. Pendente</th>
+              </tr>
+            </thead>
+            <tbody id="tb-moto-epis"></tbody>
+          </table>
+        </div>
+
+        <!-- NOTAS MOTO -->
+        <div class="card">
+          <div class="section-title">Notas</div>
+          <div class="note-box">
+            1 – Itens com (*) exigidos na quantidade de 1 por Base Operacional, podendo ser compartilhado entre
+            equipes.<br>
+            2 – Itens com (**) exigidos para cada equipe que realizar serviços em que os equipamentos são
+            necessários.<br>
+            3 – Todos EPIs e EPCs devem possuir CA.<br>
+            4 – Ferramentas, EPIs e EPCs devem atender especificações e desenhos atualizados da CONTRATANTE.
+          </div>
+          <div class="field"><label>Observações das Ferramentas, EPIs e EPCs</label><textarea data-field="moto-obs-ferr"
+              placeholder="Registre aqui observações..."></textarea></div>
+        </div>
+
+        <!-- VEÍCULO MOTO -->
+        <div class="card">
+          <div class="section-title">Veículo</div>
+          <div class="grid g4" style="margin-bottom:14px;">
+            <div class="field"><label>Placa</label><input type="text" data-field="moto-placa"></div>
+            <div class="field"><label>Modelo</label><input type="text" data-field="moto-modelo"></div>
+            <div class="field"><label>Marca</label><input type="text" data-field="moto-marca"></div>
+            <div class="field"><label>Ano de Fabricação</label><input type="text" data-field="moto-ano"></div>
+          </div>
+          <div class="grid g2" style="margin-bottom:14px;">
+            <div class="field">
+              <label>Veículo Próprio</label>
+              <select data-field="moto-veiculo-proprio">
+                <option value="">Selecione...</option>
+                <option value="Sim">Sim</option>
+                <option value="Não">Não</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Veículo Locado</label>
+              <select data-field="moto-veiculo-locado">
+                <option value="">Selecione...</option>
+                <option value="Sim">Sim</option>
+                <option value="Não">Não</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="section-title" style="margin-top:12px;">Check-list de Verificação</div>
+          <p style="font-size:11px;color:var(--text-light);margin-bottom:10px;">Marque apenas se estiver conforme.</p>
+          <div id="checklist-moto-veiculo"></div>
+
+          <div class="field" style="margin-top:12px;"><label>Observações do Veículo</label><textarea
+              data-field="moto-obs-veic" placeholder="Registre aqui observações do veículo..."></textarea></div>
+        </div>
+
+        <div class="card">
+          <div class="section-title">Anexos Fotográficos</div>
+          <p style="font-size:12px;color:var(--text-light);margin-bottom:12px;">As fotos selecionadas aparecerão no PDF
+            gerado.</p>
+          <label class="photo-upload-label">
+            📷 Selecionar Fotos
+            <input type="file" accept="image/*" multiple onchange="handlePhotoUpload(event, 'preview-moto')">
+          </label>
+          <div id="preview-moto" class="image-preview-container"></div>
+        </div>
+
+        <div class="card">
+          <div class="section-title">Assinaturas</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:40px;margin-top:24px;margin-bottom:8px;">
+            <div style="text-align:center;">
+              <div
+                style="border-top:1.5px solid var(--text);padding-top:8px;margin-top:60px;font-size:11px;font-weight:600;color:var(--text-light);letter-spacing:0.4px;">
+                Empregado Inspecionado</div>
+            </div>
+            <div style="text-align:center;">
+              <div
+                style="border-top:1.5px solid var(--text);padding-top:8px;margin-top:60px;font-size:11px;font-weight:600;color:var(--text-light);letter-spacing:0.4px;">
+                Responsável Local da Contratada</div>
+            </div>
+            <div style="text-align:center;">
+              <div
+                style="border-top:1.5px solid var(--text);padding-top:8px;margin-top:60px;font-size:11px;font-weight:600;color:var(--text-light);letter-spacing:0.4px;">
+                Agente de Inspeção</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- BOTÕES MOTO -->
+        <div class="btn-bar">
+          <div class="btn-bar-left">
+            <button class="btn btn-back" onclick="goHome()">← Voltar</button>
+            <button class="btn btn-reset" onclick="resetForm('moto')">Limpar</button>
+          </div>
+          <div class="btn-bar-right">
+            <button class="btn btn-save" onclick="saveManual(this)">💾 Salvar</button>
+            <button class="btn btn-finalizar" onclick="finalizarFormulario(this)">✅ Finalizar</button>
+            <button class="btn btn-excel" onclick="exportExcel('moto')">📊 Exportar Excel</button>
+            <button class="btn btn-pdf" onclick="exportPDF()">📄 Exportar PDF</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════════════ FORM: MULTIFUNCIONAL ES2 ═══════════════ -->
+      <div id="form-es2" class="hidden">
+        <div class="session-bar">
+          <div>
+            <span
+              style="font-size:11px;font-weight:600;color:var(--text-light);text-transform:uppercase;letter-spacing:0.5px;">ID
+              da Sessão</span><br>
+            <span class="session-id" id="session-id-display">–</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span class="session-status" id="session-status">Aguardando alterações...</span>
+            <button class="session-copy" onclick="copySessionId()" title="Copiar ID">📋 Copiar ID</button>
+          </div>
+        </div>
+        <div class="form-header">
+          <div class="cemig-logo">CEMIG</div>
+          <div>
+            <h1>FORMULÁRIO PARA AVALIAÇÃO TÉCNICA EM EMPREITEIRA – ATE</h1>
+            <h2>EQUIPES DE MULTIFUNCIONAL</h2>
+            <div class="sub">Estrutura de pessoal ES2: Equipe de serviços – 2 componentes (2 instaladores)</div>
+          </div>
+        </div>
+
+        <!-- AGENTES ES2 -->
+        <div class="card">
+          <div class="section-title">Agente(s) Executor(es) da Inspeção</div>
+          <div class="grid g2" style="margin-bottom:10px;">
+            <div class="field"><label>Agente 1</label><input type="text" data-field="es2-agente1"></div>
+            <div class="field"><label>Matrícula</label><input type="text" data-field="es2-mat1"></div>
+          </div>
+          <div class="grid g2" style="margin-bottom:10px;">
+            <div class="field"><label>Agente 2</label><input type="text" data-field="es2-agente2"></div>
+            <div class="field"><label>Matrícula</label><input type="text" data-field="es2-mat2"></div>
+          </div>
+          <div class="grid g2">
+            <div class="field"><label>Agente 3</label><input type="text" data-field="es2-agente3"></div>
+            <div class="field"><label>Matrícula</label><input type="text" data-field="es2-mat3"></div>
+          </div>
+        </div>
+
+        <!-- LOCAL E DATA ES2 -->
+        <div class="card">
+          <div class="grid g2">
+            <div class="field">
+              <label>Local da Inspeção</label>
+              <div class="location-group" style="margin-top:6px;">
+                <label><input type="radio" name="es2-local" value="Uberlândia"
+                    onchange="toggleOutro(this,'es2-outro-local')"> Uberlândia</label>
+                <label><input type="radio" name="es2-local" value="Ituiutaba"
+                    onchange="toggleOutro(this,'es2-outro-local')"> Ituiutaba</label>
+                <label><input type="radio" name="es2-local" value="Outro"
+                    onchange="toggleOutro(this,'es2-outro-local')">
+                  Outro:</label>
+                <input type="text" id="es2-outro-local" class="hidden" placeholder="Especifique..."
+                  style="width:150px;border:1px solid #b0bec5;border-radius:4px;padding:4px 8px;font-size:12px;"
+                  data-field="es2-outro-local">
+              </div>
+            </div>
+            <div class="field"><label>Data</label><input type="date" data-field="es2-data"></div>
+          </div>
+        </div>
+
+        <!-- COMPONENTES EQUIPE ES2 -->
+        <div class="card">
+          <div class="section-title">Componentes da Equipe Apresentada</div>
+          <table>
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th>Matrícula</th>
+                <th>Função</th>
+                <th>Cód. Crachá</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><input type="text" style="width:100%;border:1px solid #ddd;padding:4px 6px;border-radius:3px;"
+                    data-field="es2-nome1"></td>
+                <td><input type="text"
+                    style="width:100%;border:1px solid #ddd;padding:4px 6px;border-radius:3px;font-family:'IBM Plex Mono',monospace;"
+                    placeholder="Matrícula" data-field="es2-cpf1"></td>
+                <td>Instalador</td>
+                <td><input type="text" style="width:100%;border:1px solid #ddd;padding:4px 6px;border-radius:3px;"
+                    data-field="es2-cracha1"></td>
+              </tr>
+              <tr>
+                <td><input type="text" style="width:100%;border:1px solid #ddd;padding:4px 6px;border-radius:3px;"
+                    data-field="es2-nome2"></td>
+                <td><input type="text"
+                    style="width:100%;border:1px solid #ddd;padding:4px 6px;border-radius:3px;font-family:'IBM Plex Mono',monospace;"
+                    placeholder="Matrícula" data-field="es2-cpf2"></td>
+                <td>Instalador</td>
+                <td><input type="text" style="width:100%;border:1px solid #ddd;padding:4px 6px;border-radius:3px;"
+                    data-field="es2-cracha2"></td>
+              </tr>
+              <tr>
+                <td><input type="text" style="width:100%;border:1px solid #ddd;padding:4px 6px;border-radius:3px;"
+                    data-field="es2-nome3"></td>
+                <td><input type="text"
+                    style="width:100%;border:1px solid #ddd;padding:4px 6px;border-radius:3px;font-family:'IBM Plex Mono',monospace;"
+                    placeholder="Matrícula" data-field="es2-cpf3"></td>
+                <td>Instalador</td>
+                <td><input type="text" style="width:100%;border:1px solid #ddd;padding:4px 6px;border-radius:3px;"
+                    data-field="es2-cracha3"></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- FERRAMENTAS ES2 -->
+        <div class="card">
+          <div class="section-title">Ferramentas e Equipamentos – ES2</div>
+          <table>
+            <thead>
+              <tr>
+                <th style="width:42px;">Item</th>
+                <th>Descrição</th>
+                <th style="width:45px;">Uni.</th>
+                <th style="width:50px;">ES2</th>
+                <th style="width:100px;">Qtd. Pendente</th>
+              </tr>
+            </thead>
+            <tbody id="tb-es2-ferramentas"></tbody>
+          </table>
+        </div>
+
+        <!-- EPIs ES2 -->
+        <div class="card">
+          <div class="section-title">EPIs – Equipamentos de Proteção Individual</div>
+          <table>
+            <thead>
+              <tr>
+                <th style="width:42px;">Item</th>
+                <th>Descrição</th>
+                <th style="width:45px;">Uni.</th>
+                <th style="width:50px;">ES2</th>
+                <th style="width:100px;">Qtd. Pendente</th>
+              </tr>
+            </thead>
+            <tbody id="tb-es2-epis"></tbody>
+          </table>
+        </div>
+
+        <!-- NOTAS ES2 -->
+        <div class="card">
+          <div class="section-title">Notas</div>
+          <div class="note-box">
+            1 – Itens com (*) exigidos na quantidade de 1 por Base Operativa, podendo ser compartilhado entre
+            equipes.<br>
+            2 – Itens com (**) exigidos para cada equipe que realizar serviços em que os equipamentos são
+            necessários.<br>
+            3 – Conjunto cinto paraquedista: cinto + linha de vida + trava-queda + talabarte + sacola.<br>
+            4 – Todos EPIs e EPCs devem possuir CA.<br>
+            5 – Ferramentas, EPIs e EPCs devem atender especificações e desenhos atualizados da CONTRATANTE.
+          </div>
+          <div class="field"><label>Observações das Ferramentas, EPIs e EPCs</label><textarea data-field="es2-obs-ferr"
+              placeholder="Registre aqui observações..."></textarea></div>
+        </div>
+
+        <!-- VEÍCULO ES2 -->
+        <div class="card">
+          <div class="section-title">Veículo</div>
+          <div class="grid g4" style="margin-bottom:14px;">
+            <div class="field"><label>Placa</label><input type="text" data-field="es2-placa"></div>
+            <div class="field"><label>Modelo do Veículo</label><input type="text" data-field="es2-modelo"></div>
+            <div class="field"><label>Marca do Veículo</label><input type="text" data-field="es2-marca-veic"></div>
+            <div class="field"><label>Ano de Fabricação</label><input type="text" data-field="es2-ano"></div>
+          </div>
+          <div class="grid g2" style="margin-bottom:14px;">
+            <div class="field"><label>Nome do Motorista</label><input type="text" data-field="es2-motorista"></div>
+            <div class="field"><label>Matrícula do Motorista</label><input type="text" placeholder="Matrícula"
+                data-field="es2-cpf-mot"></div>
+          </div>
+          <div class="grid g4" style="margin-bottom:14px;">
+            <div class="field">
+              <label>Tipo de Equipamento</label>
+              <div style="display:flex;gap:16px;margin-top:6px;">
+                <label class="checkbox-inline"><input type="radio" name="es2-tipo-equip" value="Escada Giratória">
+                  Escada
+                  Giratória</label>
+                <label class="checkbox-inline"><input type="radio" name="es2-tipo-equip" value="Cesta Aérea"> Cesta
+                  Aérea</label>
+              </div>
+            </div>
+            <div class="field"><label>Marca do Equipamento</label><input type="text" data-field="es2-marca-equip"></div>
+            <div class="field"><label>Modelo do Equipamento</label><input type="text" data-field="es2-modelo-equip">
+            </div>
+            <div class="field"><label>Ano Fab. Equipamento</label><input type="text" data-field="es2-ano-equip"></div>
+          </div>
+
+          <div class="section-title" style="margin-top:12px;">Check-list de Verificação do Veículo</div>
+          <p style="font-size:11px;color:var(--text-light);margin-bottom:10px;">Marque apenas se estiver conforme.</p>
+          <div class="grid g2">
+            <div>
+              <strong style="font-size:11px;color:var(--cemig-blue);text-transform:uppercase;">Geral</strong>
+              <div id="checklist-es2-veiculo"></div>
+            </div>
+            <div>
+              <strong style="font-size:11px;color:var(--cemig-blue);text-transform:uppercase;">Equipamento (Escada /
+                Cesta)</strong>
+              <div id="checklist-es2-escada"></div>
+            </div>
+          </div>
+
+          <div class="field" style="margin-top:12px;"><label>Observações do Veículo</label><textarea
+              data-field="es2-obs-veic" placeholder="Registre aqui observações do veículo..."></textarea></div>
+        </div>
+
+        <!-- KIT ANTIRREPROVA -->
+        <div class="card">
+          <div class="section-title">Kit Antirreprova – Relação de Ferramentas e Materiais</div>
+          <table>
+            <thead>
+              <tr>
+                <th style="width:42px;">Item</th>
+                <th>Descrição</th>
+                <th style="width:45px;">Uni.</th>
+                <th style="width:50px;">ES2</th>
+                <th style="width:100px;">Qtd. Pendente</th>
+              </tr>
+            </thead>
+            <tbody id="tb-es2-kit"></tbody>
+          </table>
+          <div class="field" style="margin-top:14px;"><label>Observações do Kit Antirreprova</label><textarea
+              data-field="es2-obs-kit" placeholder="Registre aqui observações..."></textarea></div>
+        </div>
+
+        <div class="card">
+          <div class="section-title">Anexos Fotográficos</div>
+          <p style="font-size:12px;color:var(--text-light);margin-bottom:12px;">As fotos selecionadas aparecerão no PDF
+            gerado.</p>
+          <label class="photo-upload-label">
+            📷 Selecionar Fotos
+            <input type="file" accept="image/*" multiple onchange="handlePhotoUpload(event, 'preview-es2')">
+          </label>
+          <div id="preview-es2" class="image-preview-container"></div>
+        </div>
+
+        <div class="card">
+          <div class="section-title">Assinaturas</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:40px;margin-top:24px;margin-bottom:8px;">
+            <div style="text-align:center;">
+              <div
+                style="border-top:1.5px solid var(--text);padding-top:8px;margin-top:60px;font-size:11px;font-weight:600;color:var(--text-light);letter-spacing:0.4px;">
+                Empregado Inspecionado</div>
+            </div>
+            <div style="text-align:center;">
+              <div
+                style="border-top:1.5px solid var(--text);padding-top:8px;margin-top:60px;font-size:11px;font-weight:600;color:var(--text-light);letter-spacing:0.4px;">
+                Responsável Local da Contratada</div>
+            </div>
+            <div style="text-align:center;">
+              <div
+                style="border-top:1.5px solid var(--text);padding-top:8px;margin-top:60px;font-size:11px;font-weight:600;color:var(--text-light);letter-spacing:0.4px;">
+                Agente de Inspeção</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- BOTÕES ES2 -->
+        <div class="btn-bar">
+          <div class="btn-bar-left">
+            <button class="btn btn-back" onclick="goHome()">← Voltar</button>
+            <button class="btn btn-reset" onclick="resetForm('es2')">Limpar</button>
+          </div>
+          <div class="btn-bar-right">
+            <button class="btn btn-save" onclick="saveManual(this)">💾 Salvar</button>
+            <button class="btn btn-finalizar" onclick="finalizarFormulario(this)">✅ Finalizar</button>
+            <button class="btn btn-excel" onclick="exportExcel('es2')">📊 Exportar Excel</button>
+            <button class="btn btn-pdf" onclick="exportPDF()">📄 Exportar PDF</button>
+          </div>
+        </div>
+      </div>
+
+
+      <!-- ═══════════════ FORM: PARTE AMBIENTAL ═══════════════ -->
+      <div id="form-amb" class="hidden">
+        <div class="session-bar">
+          <div>
+            <span
+              style="font-size:11px;font-weight:600;color:var(--text-light);text-transform:uppercase;letter-spacing:0.5px;">ID
+              da Sessão</span><br>
+            <span class="session-id" id="session-id-display">–</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span class="session-status" id="session-status">Aguardando alterações...</span>
+            <button class="session-copy" onclick="copySessionId()" title="Copiar ID">📋 Copiar ID</button>
+          </div>
+        </div>
+        <div class="form-header">
+          <div class="cemig-logo">CEMIG</div>
+          <div>
+            <h1>FORMULÁRIO PARA AVALIAÇÃO TÉCNICA EM EMPREITEIRA – ATE</h1>
+            <h2>PARTE AMBIENTAL</h2>
+            <div class="sub">Check list orientativo para avaliação ambiental em base operativa de empreiteiras</div>
+          </div>
+        </div>
+
+        <!-- CABEÇALHO -->
+        <div class="card">
+          <div class="section-title">Identificação</div>
+          <div class="grid g2" style="margin-bottom:12px;">
+            <div class="field"><label>Contratada</label><input type="text" data-field="amb-contratada"></div>
+            <div class="field"><label>Município</label><input type="text" data-field="amb-municipio"></div>
+          </div>
+          <div class="grid g2">
+            <div class="field"><label>Técnico de Meio Ambiente da Contratada</label><input type="text"
+                data-field="amb-tecnico"></div>
+            <div class="field"><label>CRT Nº</label><input type="text" data-field="amb-crt"></div>
+          </div>
+        </div>
+
+        <!-- AGENTES AMB -->
+        <div class="card">
+          <div class="section-title">Agente(s) Executor(es) da Inspeção</div>
+          <div class="grid g2" style="margin-bottom:10px;">
+            <div class="field"><label>Agente 1</label><input type="text" data-field="amb-agente1"></div>
+            <div class="field"><label>Matrícula</label><input type="text" data-field="amb-mat-ag1"></div>
+          </div>
+          <div class="grid g2" style="margin-bottom:10px;">
+            <div class="field"><label>Agente 2</label><input type="text" data-field="amb-agente2"></div>
+            <div class="field"><label>Matrícula</label><input type="text" data-field="amb-mat-ag2"></div>
+          </div>
+          <div class="grid g2">
+            <div class="field"><label>Agente 3</label><input type="text" data-field="amb-agente3"></div>
+            <div class="field"><label>Matrícula</label><input type="text" data-field="amb-mat-ag3"></div>
+          </div>
+        </div>
+
+        <!-- ABASTECIMENTO DE ÁGUA -->
+        <div class="card">
+          <div class="section-title">Abastecimento de Água</div>
+          <div class="checklist-item">
+            <input type="radio" name="amb-agua" id="amb-agua-1" value="concessionaria">
+            <label for="amb-agua-1">É feito por concessionária (COPASA, SAAE, etc.)<br>
+              <span class="checklist-sub">Evidência: conta no endereço da instalação (endereço deve conferir).</span>
+            </label>
+          </div>
+          <div class="checklist-item">
+            <input type="radio" name="amb-agua" id="amb-agua-2" value="cisterna">
+            <label for="amb-agua-2">É feito por cisterna, poço artesiano ou qualquer outra forma subterrânea.<br>
+              <span class="checklist-sub">Evidência: Certidão de Registro de Uso Insignificante de Recurso Hídrico ou
+                Outorga de Uso de Recursos Hídricos (dentro da validade).</span>
+            </label>
+          </div>
+          <div class="field" style="margin-top:10px;"><label>Observação</label><textarea data-field="amb-agua-obs"
+              placeholder="Registre observações..."></textarea></div>
+        </div>
+
+        <!-- COLETA DE ESGOTO -->
+        <div class="card">
+          <div class="section-title">Coleta de Esgoto</div>
+          <div class="checklist-item">
+            <input type="radio" name="amb-esgoto" id="amb-esgoto-1" value="concessionaria">
+            <label for="amb-esgoto-1">É feito por concessionária (COPASA, SAAE, etc.)<br>
+              <span class="checklist-sub">Evidência: conta no endereço com menção à coleta de esgoto.</span>
+            </label>
+          </div>
+          <div class="checklist-item">
+            <input type="radio" name="amb-esgoto" id="amb-esgoto-2" value="sistema-proprio">
+            <label for="amb-esgoto-2">O esgoto é tratado por sistema próprio (fossa séptica, filtro anaeróbio, etc.)<br>
+              <span class="checklist-sub">Evidência: verificar visualmente e solicitar comprovante de exames
+                laboratoriais
+                com "Conclusão" atendendo à legislação ambiental.</span>
+            </label>
+          </div>
+          <div class="checklist-item">
+            <input type="radio" name="amb-esgoto" id="amb-esgoto-3" value="fossa-impermeavel">
+            <label for="amb-esgoto-3">O esgoto é armazenado em fossa impermeabilizada e recolhido por empresa.<br>
+              <span class="checklist-sub">Evidência: cópia da licença ambiental da empresa coletora (dentro da validade
+                e
+                autorizada para o serviço).</span>
+            </label>
+          </div>
+          <div class="field" style="margin-top:10px;"><label>Observação</label><textarea data-field="amb-esgoto-obs"
+              placeholder="Registre observações..."></textarea></div>
+        </div>
+
+        <!-- ARMAZENAMENTO DE RESÍDUOS -->
+        <div class="card">
+          <div class="section-title">Armazenamento de Resíduos</div>
+          <div class="checklist-item">
+            <input type="checkbox" id="amb-residuos">
+            <label for="amb-residuos">O local possui baias (p/ cabos), tambores ou bombonas e demais recipientes para
+              separação e armazenamento de resíduos.<br>
+              <span class="checklist-sub">Evidência: todo recipiente deve estar identificado com o nome do resíduo e
+                conter a classificação (Perigoso – Classe I / Não Perigoso – Classe IIA ou IIB). Fotografar situações de
+                dúvida.</span>
+            </label>
+          </div>
+          <div class="field" style="margin-top:10px;"><label>Observação</label><textarea data-field="amb-residuos-obs"
+              placeholder="Registre observações..."></textarea></div>
+        </div>
+
+        <!-- ARMAZENAMENTO DE PRODUTOS QUÍMICOS -->
+        <div class="card">
+          <div class="section-title">Armazenamento de Produtos Químicos</div>
+          <div class="checklist-item">
+            <input type="checkbox" id="amb-quimicos">
+            <label for="amb-quimicos">Há local identificado, trancado, ventilado, contido por bandejas nas prateleiras e
+              com as respectivas FISPQ para armazenamento de produtos químicos e embalagens vazias.<br>
+              <span class="checklist-sub">Nota 1: caso não haja produto químico armazenado, não haverá FISPQ a cobrar.
+                Nota 2: produtos inflamáveis não podem estar próximos de fontes de ignição.</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- EQUIPAMENTOS AVARIADOS COM ÓLEO -->
+        <div class="card">
+          <div class="section-title">Armazenamento de Equipamentos Avariados Contendo Óleo</div>
+          <div class="checklist-item">
+            <input type="radio" name="amb-oleo" id="amb-oleo-1" value="alvenaria">
+            <label for="amb-oleo-1">Há bacia de contenção em alvenaria (mínimo 25 m²) de acordo com o procedimento
+              GR/EC-1204.<br>
+              <span class="checklist-sub">Evidência: ART de profissional habilitado atestando atendimento ao
+                procedimento.</span>
+            </label>
+          </div>
+          <div class="checklist-item">
+            <input type="radio" name="amb-oleo" id="amb-oleo-2" value="metalica">
+            <label for="amb-oleo-2">Há bacia(s) de contenção metálica(s) cuja soma seja de no mínimo 25 m², conforme
+              item
+              4.4 do procedimento GR/EC-1204.<br>
+              <span class="checklist-sub">Evidência: verificar estanqueidade (pontos de solda; se houver dúvida, colocar
+                água e observar vazamento).</span>
+            </label>
+          </div>
+          <div class="field" style="margin-top:10px;"><label>Observação</label><textarea data-field="amb-oleo-obs"
+              placeholder="Registre observações..."></textarea></div>
+        </div>
+
+        <!-- KIT PAE -->
+        <div class="card">
+          <div class="section-title">Kit PAE – Plano de Atendimento a Emergência</div>
+          <div class="checklist-item">
+            <input type="checkbox" id="amb-pae">
+            <label for="amb-pae">A instalação conta com kit para emergências de vazamento de óleo, sinalizado e contendo
+              no mínimo: pá, serragem, sacos plásticos de alta resistência, fraldão e vassoura.<br>
+              <span class="checklist-sub">Nota: sinalização do Kit PAE deve estar em local visível e o kit acessível
+                para
+                uso imediato a qualquer dia e horário.</span>
+            </label>
+          </div>
+          <div class="field" style="margin-top:10px;"><label>Observação</label><textarea data-field="amb-pae-obs"
+              placeholder="Registre observações..."></textarea></div>
+        </div>
+
+        <!-- MONITORAMENTO DE FUMAÇA PRETA -->
+        <div class="card">
+          <div class="section-title">Monitoramento de Fumaça Preta em Veículos a Diesel</div>
+          <div class="checklist-item">
+            <input type="radio" name="amb-fumaca" id="amb-fumaca-1" value="ringelmann">
+            <label for="amb-fumaca-1">O monitoramento é realizado por Escala Ringelmann e há planilha impressa e
+              assinada
+              com identificação e controle de todos os veículos a diesel.<br>
+              <span class="checklist-sub">Periodicidade trimestral; primeiro monitoramento antes do início das
+                atividades,
+                mesmo em veículos novos. Controle realizado pelo Técnico de Meio Ambiente da contratada.</span>
+            </label>
+          </div>
+          <div class="checklist-item">
+            <input type="radio" name="amb-fumaca" id="amb-fumaca-2" value="opacimetro">
+            <label for="amb-fumaca-2">O monitoramento é realizado por Opacímetro em empresa contratada e há laudos
+              técnicos dos testes realizados em todos os veículos a diesel.</label>
+          </div>
+          <div class="field" style="margin-top:10px;"><label>Observação</label><textarea data-field="amb-fumaca-obs"
+              placeholder="Registre observações..."></textarea></div>
+        </div>
+
+        <!-- DEPÓSITO DE POSTES -->
+        <div class="card">
+          <div class="section-title">Depósito de Postes</div>
+          <div class="checklist-item">
+            <input type="checkbox" id="amb-postes">
+            <label for="amb-postes">Possui depósito de postes devidamente sinalizado, cercado, trancado e sem condições
+              propícias à infestação por animais peçonhentos (mato alto, lixo, galharias, etc.).<br>
+              <span class="checklist-sub">Nota 1: verificar se o depósito está a menos de 30m de curso d'água (se sim,
+                exige autorização do órgão ambiental – APP). Nota 2: verificar falhas de drenagem e taludes sem
+                vegetação.
+                Nota 3: verificar postes Duplo T com cocho virado para cima.</span>
+            </label>
+          </div>
+          <div class="field" style="margin-top:10px;"><label>Observação</label><textarea data-field="amb-postes-obs"
+              placeholder="Registre observações..."></textarea></div>
+        </div>
+
+        <!-- REGISTRO DE MOTOSSERRAS -->
+        <div class="card">
+          <div class="section-title">Registro de Motosserras</div>
+          <div class="checklist-item">
+            <input type="checkbox" id="amb-motosserras">
+            <label for="amb-motosserras">Todas as motosserras apresentadas possuem Licença de Porte e Certificado de
+              Registro emitidos pelo IEF, dentro dos respectivos prazos de validade.<br>
+              <span class="checklist-sub">Evidência: Certificado de Registro (categoria "Proprietário de motosserra –
+                Pessoa jurídica") + Licença de Porte para cada motosserra (conferir proprietário e Número de
+                Série/Chassi).</span>
+            </label>
+          </div>
+          <div class="field" style="margin-top:10px;"><label>Observação</label><textarea
+              data-field="amb-motosserras-obs" placeholder="Registre observações..."></textarea></div>
+        </div>
+
+        <!-- TRITURADOR DE RESÍDUOS DE PODA -->
+        <div class="card">
+          <div class="section-title">Triturador de Resíduos de Poda <span
+              style="font-size:11px;font-weight:400;color:var(--text-light);">(somente quando há equipe exclusiva de
+              poda
+              na ATE)</span></div>
+          <div class="checklist-item">
+            <input type="checkbox" id="amb-triturador">
+            <label for="amb-triturador">Há triturador(es) de resíduos de poda na quantidade e especificação exigidas
+              pelo
+              contrato.<br>
+              <span class="checklist-sub">Nota: consultar a Especificação Técnica do contrato para verificar quantidade
+                e
+                capacidade de trituração exigidas.</span>
+            </label>
+          </div>
+          <div class="field" style="margin-top:10px;"><label>Observação</label><textarea data-field="amb-triturador-obs"
+              placeholder="Registre observações..."></textarea></div>
+        </div>
+
+        <!-- VISITA GERAL AO PÁTIO -->
+        <div class="card">
+          <div class="section-title">Visita Geral ao Pátio / Depósito</div>
+          <p style="font-size:12px;color:var(--text-light);margin-bottom:12px;">Percorrer toda a extensão do pátio e
+            depósito e verificar a eventual existência de:</p>
+          <div class="checklist-item">
+            <input type="checkbox" id="amb-patio-1">
+            <label for="amb-patio-1">Locais com água parada ou com potencial para tal.</label>
+          </div>
+          <div class="checklist-item">
+            <input type="checkbox" id="amb-patio-2">
+            <label for="amb-patio-2">Sinais de queima de resíduos, inclusive vegetação.</label>
+          </div>
+          <div class="checklist-item">
+            <input type="checkbox" id="amb-patio-3">
+            <label for="amb-patio-3">Local para lavagem de veículos.</label>
+          </div>
+          <div class="checklist-item">
+            <input type="checkbox" id="amb-patio-4">
+            <label for="amb-patio-4">Gaiolas, jaulas ou quaisquer outros artefatos que indiquem aprisionamento ou
+              captura
+              de fauna.</label>
+          </div>
+          <div class="checklist-item">
+            <input type="checkbox" id="amb-patio-5">
+            <label for="amb-patio-5">Cisternas, poços artesianos ou fossas sanitárias mesmo quando tenha sido alegado e
+              apresentado evidência de prestação por concessionária.</label>
+          </div>
+          <div class="note-box" style="margin-top:12px;">Em caso de ocorrência destes quesitos ou quaisquer outros não
+            listados que configurem ameaças ambientais, fazer constar no Relatório de ATE – RATE.</div>
+          <div class="field" style="margin-top:10px;"><label>Observação Geral do Pátio</label><textarea
+              data-field="amb-patio-obs" placeholder="Registre observações..."></textarea></div>
+        </div>
+
+        <!-- ALOJAMENTO -->
+        <div class="card">
+          <div class="section-title">Alojamento <span
+              style="font-size:11px;font-weight:400;color:var(--text-light);">(quando aplicável)</span></div>
+          <div class="checklist-item">
+            <input type="checkbox" id="amb-alojamento">
+            <label for="amb-alojamento">Não há vazamento de água em vasos sanitários, torneiras e registros.<br>
+              <span class="checklist-sub">Nota: nem toda contratada possui alojamento.</span>
+            </label>
+          </div>
+          <div class="field" style="margin-top:10px;"><label>Observação</label><textarea data-field="amb-alojamento-obs"
+              placeholder="Registre observações..."></textarea></div>
+        </div>
+
+        <!-- BOAS PRÁTICAS -->
+        <div class="card">
+          <div class="section-title">Boas Práticas Ambientais <span
+              style="font-size:11px;font-weight:400;color:var(--text-light);">(registrar mesmo que não sejam exigências
+              contratuais)</span></div>
+          <div class="checklist-item">
+            <input type="checkbox" id="amb-boas-1">
+            <label for="amb-boas-1">Coleta de água de chuva.</label>
+          </div>
+          <div class="checklist-item">
+            <input type="checkbox" id="amb-boas-2">
+            <label for="amb-boas-2">Reaproveitamento de água.</label>
+          </div>
+          <div class="checklist-item">
+            <input type="checkbox" id="amb-boas-3">
+            <label for="amb-boas-3">Campanhas de conscientização ambiental (placas, faixas, etc.).</label>
+          </div>
+          <div class="checklist-item">
+            <input type="checkbox" id="amb-boas-4">
+            <label for="amb-boas-4">Coleta seletiva.</label>
+          </div>
+          <div class="field" style="margin-top:10px;"><label>Observação</label><textarea data-field="amb-boas-obs"
+              placeholder="Registre observações..."></textarea></div>
+        </div>
+
+        <!-- ENCERRAMENTO -->
+        <div class="card">
+          <div class="section-title">Encerramento</div>
+          <div class="grid g2" style="margin-bottom:12px;">
+            <div class="field"><label>Verificação realizada por</label><input type="text" data-field="amb-realizada">
+            </div>
+            <div class="field"><label>Matrícula</label><input type="text" data-field="amb-mat"></div>
+          </div>
+          <div class="grid g2">
+            <div class="field"><label>Gerência</label><input type="text" data-field="amb-gerencia"></div>
+            <div class="field"><label>Data</label><input type="date" data-field="amb-data"></div>
+          </div>
+        </div>
+
+        <!-- ASSINATURAS -->
+        <div class="card">
+          <div class="section-title">Anexos Fotográficos</div>
+          <p style="font-size:12px;color:var(--text-light);margin-bottom:12px;">As fotos selecionadas aparecerão no PDF
+            gerado.</p>
+          <label class="photo-upload-label">
+            📷 Selecionar Fotos
+            <input type="file" accept="image/*" multiple onchange="handlePhotoUpload(event, 'preview-amb')">
+          </label>
+          <div id="preview-amb" class="image-preview-container"></div>
+        </div>
+
+        <div class="card">
+          <div class="section-title">Assinaturas</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:40px;margin-top:24px;margin-bottom:8px;">
+            <div style="text-align:center;">
+              <div
+                style="border-top:1.5px solid var(--text);padding-top:8px;margin-top:60px;font-size:11px;font-weight:600;color:var(--text-light);letter-spacing:0.4px;">
+                Empregado Inspecionado</div>
+            </div>
+            <div style="text-align:center;">
+              <div
+                style="border-top:1.5px solid var(--text);padding-top:8px;margin-top:60px;font-size:11px;font-weight:600;color:var(--text-light);letter-spacing:0.4px;">
+                Responsável Local da Contratada</div>
+            </div>
+            <div style="text-align:center;">
+              <div
+                style="border-top:1.5px solid var(--text);padding-top:8px;margin-top:60px;font-size:11px;font-weight:600;color:var(--text-light);letter-spacing:0.4px;">
+                Agente de Inspeção</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- BOTÕES AMB -->
+        <div class="btn-bar">
+          <div class="btn-bar-left">
+            <button class="btn btn-back" onclick="goHome()">← Voltar</button>
+            <button class="btn btn-reset" onclick="resetForm('amb')">Limpar</button>
+          </div>
+          <div class="btn-bar-right">
+            <button class="btn btn-save" onclick="saveManual(this)">💾 Salvar</button>
+            <button class="btn btn-finalizar" onclick="finalizarFormulario(this)">✅ Finalizar</button>
+            <button class="btn btn-excel" onclick="exportExcel('amb')">📊 Exportar Excel</button>
+            <button class="btn btn-pdf" onclick="exportPDF()">📄 Exportar PDF</button>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /page-wrapper -->
+
+    <style>
+      @media print {
+        :root {
+          --cemig-blue: #00a651 !important;
+        }
+      }
+    </style>
+
+    <script>
+      // ════════════════════════════════════════════════════════
+      // DATA - INFRAESTRUTURA
+      // ════════════════════════════════════════════════════════
+      const infraItems = [
+        { num: 1, desc: "Equipamento de refrigeração em bom estado, para guarda e conservação de alimentos." },
+        { num: 2, desc: "Água potável, filtrada, para os trabalhadores por meio de bebedouros ou equipamento similar." },
+        { num: 3, desc: "Produtos inflamáveis e químicos armazenados adequadamente em local apropriado." },
+        { num: 4, desc: "Reservatório de água com capacidade aproximada de 60 litros diários por trabalhador. O reservatório ou bebedouro é limpo periodicamente." },
+        { num: 5, desc: "Aparelhos e sistema de ar condicionado inspecionados e limpos periodicamente." },
+        { num: 6, desc: "Existência e implantação do PSCIP – processo de segurança contra incêndio e pânico. A instalação possui o projeto de combate a incêndio e o AVCB atualizados." },
+        { num: 7, desc: "Existência de equipamentos de proteção contra incêndio onde aplicável (extintores, hidrantes, sprinklers, etc.)." },
+        { num: 8, desc: "Pisos do local de trabalho livres de depressões ou saliências que prejudiquem a circulação de pessoas ou a movimentação de materiais." },
+        { num: 9, desc: "Emprego de materiais antiderrapantes e corrimãos onde houver perigo de escorregamento nos pisos, escadas, rampas, corredores e passagens dos locais de trabalho." },
+        { num: 10, desc: "Materiais armazenados de forma a evitar a obstrução de portas, equipamentos contra incêndio e saídas de emergência." },
+        { num: 11, desc: "Vias de circulação de pessoas e máquinas sinalizadas e pré-definidas em locais com alto potencial de risco." },
+        { num: 12, desc: "Existência de sinalização de segurança e de emergência." },
+        { num: 13, desc: "Prateleiras, estantes, escaninhos e armações robustas e adequadas ao tipo de material armazenado." },
+        { num: 14, desc: "Local destinado a refeição fora do local de trabalho, limpo, arejado, com boa iluminação, piso lavável, com mesas e assentos em bom estado de conservação, e lavatórios e pias próximos ao local." },
+        { num: 15, desc: "Estufa, fogão ou similar para aquecimento de refeição, sendo proibida a utilização de álcool para este fim." },
+        { num: 16, desc: "Iluminação adequada ao ambiente." },
+        { num: 17, desc: "Conforto térmico adequado ao ambiente." },
+        { num: 18, desc: "Existência de guarda-corpo nos andares acima do solo. Tais como: terraços, balcões, compartimentos para garagens, etc." },
+        { num: 19, desc: "Os banheiros e vestiários são em número suficiente para atender os empregados." },
+        { num: 20, desc: "Resíduos industriais devidamente separados, em locais disponíveis para coleta." },
+        { num: 21, desc: "As instalações elétricas estão adequadamente protegidas. (Caixas com tampa, fiação dentro de eletrodutos, conexões isoladas, bebedouros e chuveiros aterrados)." },
+        { num: 22, desc: "Pia exclusiva para lavar os alimentos e utensílios." },
+        { num: 23, desc: "Os botijões de GLP estão instalados fora do ambiente de utilização, em área permanentemente ventilada e coberta. Válvula e mangueira aprovados pelo INMETRO e dentro da validade." },
+        { num: 24, desc: "As instalações sanitárias possuem paredes e piso impermeável, lavável, o piso inclinado para ralos de escoamento com sifões e não apresentam ressaltos/saliências e portas individuais por sanitário." },
+        { num: 25, desc: "A instalação sanitária possui lavatório, vaso sanitário com assento e caixa de descarga ou válvula automática, na proporção de 1 conjunto para cada grupo de 20 trabalhadores." },
+        { num: 26, desc: "Possui local para armazenamento de alimentos, separado dos produtos de limpeza." },
+        { num: 27, desc: "O chuveiro possui água quente e está na proporção de 01 para cada grupo de 10 trabalhadores." },
+        { num: 28, desc: "A cobertura ou laje protege contra chuva e a instalação não está situada em subsolo ou porões." },
+        { num: 29, desc: "Equipe multidisciplinar indicada, espaços confinados reconhecidos, identificados, sinalizados e com registros atualizados." },
+        { num: 30, desc: "Manter o ambiente livre de focos de reprodução de mosquitos." },
+        { num: 31, desc: "Os equipamentos de proteção contra incêndio estão selados, sinalizados e com a inspeção em dia." },
+        { num: 32, desc: "O estabelecimento possui alvará de licença e funcionamento para as atividades desenvolvidas." },
+        { num: 33, desc: "Cadeira com altura ajustável, rodízios, borda frontal arredondada, encosto com forma levemente adaptada ao corpo para proteção da região lombar, pouca ou nenhuma conformação no assento." },
+        { num: 34, desc: "Mapa de risco em local visível e atualizado." },
+        { num: 35, desc: "Mesa sem quinas vivas e sem tampa de vidros." },
+        { num: 36, desc: "Monitor e mesa atendem as condições antropométricas dos trabalhadores." },
+        { num: 39, desc: "Existência de vestiário com armários individuais, bom estado de conservação e com aberturas para ventilação ou portas teladas." },
+        { num: 40, desc: "Materiais e equipamentos armazenados adequadamente." },
+        { num: 41, desc: "Canteiro de obra/estabelecimento organizado, limpo e desimpedido, notadamente nas vias de circulação, passagens e escadarias." },
+        { num: 42, desc: "O local para refeições possui nº de assentos e mesas com tampos lisos e laváveis, suficientes para atender os trabalhadores." },
+        { num: 43, desc: "Layout adequado ao material armazenado." },
+        { num: 44, desc: "Local apropriado para armazenamento e destinação de resíduos." },
+        { num: 45, desc: "Parte não pavimentada da instalação capinada e limpa." },
+        { num: 46, desc: "Banheiros e instalações sanitárias higienizados, com água, sabão e papel toalha e higiênico disponíveis." },
+        { num: 47, desc: "Possui recipiente com tampa na cozinha e banheiro para coleta de lixo. Os resíduos são retirados e armazenados em local adequado periodicamente." },
+        { num: 48, desc: "A instalação sanitária possui papel higiênico e o lavatório possui material para a limpeza, enxugo ou secagem das mãos, proibindo-se o uso de toalhas coletivas." },
+        { num: 49, desc: "Produto químico possui FISPQ?" },
+        { num: 50, desc: "A instalação está livre de insetos e roedores, não necessitando de dedetização." },
+      ];
+
+      // ════════════════════════════════════════════════════════
+      // DATA - MOTOCICLISTAS
+      // ════════════════════════════════════════════════════════
+      const motoFerramentas = [
+        { num: 1, desc: "Alicate profissional com cabo isolado", uni: "Pç", qty: 1 },
+        { num: 2, desc: "Alicate de corte diagonal com cabo isolado", uni: "Pç", qty: 1 },
+        { num: 3, desc: "Analisador de Desvio de Registro (**)", uni: "Pç", qty: 1, laudo: 1, fabs: [], labs: ["Oficina do Alicate", "ITRA", "REMO", "CTMIG", "Helite", "Conserve", "Engelmig"] },
+        { num: 4, desc: "Bastão de manobra ou vara telescópica com cabeçote universal com no mínimo 6 peças extensíveis e sacola para acondicionar", uni: "Pç", qty: 1, laudo: 1, fabs: ["Montrel"] },
+        { num: 6, desc: "Canivete, lâmina tipo navalha", uni: "Pç", qty: 1 },
+        { num: 7, desc: "Chave canhão de 3/8\" isolada (isolamento de cabo e extensão)", uni: "Pç", qty: 1 },
+        { num: 8, desc: "Chave canhão de 7/16\" isolada (isolamento de cabo e extensão)", uni: "Pç", qty: 1 },
+        { num: 9, desc: "Chave com catraca com cabo isolado p/ aplicação de conector perfuração", uni: "Pç", qty: 1 },
+        { num: 10, desc: "Chave de fenda isolada 6,5 x 150mm (isolamento de cabo e extensão)", uni: "Pç", qty: 1 },
+        { num: 11, desc: "Chave de fenda isolada 3 x 100mm (isolamento de cabo e extensão)", uni: "Pç", qty: 1 },
+        { num: 12, desc: "Chave de fenda isolada 5,5 x 150mm (isolamento de cabo e extensão)", uni: "Pç", qty: 1 },
+        { num: 13, desc: "Chave Phillips isolada (isolamento de cabo e extensão) 6 x 150 mm", uni: "Pç", qty: 1 },
+        { num: 14, desc: "Chave Phillips isolada (isolamento de cabo e extensão) 3 x 100 mm", uni: "Pç", qty: 1 },
+        { num: 15, desc: "Chave inglesa 200mm isolada (isolamento de cabo e extensão)", uni: "Pç", qty: 1 },
+        { num: 17, desc: "Colete com suporte para câmera, resistente a chama", uni: "Un", qty: 1 },
+        { num: 19, desc: "Conjunto chave allen em mm de 8; 6; 5; 4; 3; 2,5 e 2", uni: "Cj", qty: 1 },
+        { num: 20, desc: "Conjunto chave allen em polegadas de 1/4; 7/32; 3/16; 5/32; 9/64; 1/8; 7/64; 3/32 e 5/64", uni: "Cj", qty: 1 },
+        { num: 22, desc: "Crachá de identificação com nome e número de registro do empregado", uni: "Pç", qty: 1 },
+        { num: 25, desc: "Dispositivo de corte de ramal", uni: "Pç", qty: 1 },
+        { num: 27, desc: "Equipamento de comunicação de dados e voz conforme especificação da Contratante (incluindo câmera e GPS)", uni: "Pç", qty: 1 },
+        { num: 28, desc: "Inflador ou testador de luvas de borracha (*)", uni: "Pç", qty: 1 },
+        { num: 29, desc: "Impressora Térmica Portátil", uni: "Pç", qty: 1, laudo: 1, fabs: ["ZEBRA RW420", "ZEBRA ZQ520", "ZEBRA ZQ521", "BIXOLON XM7-40"] },
+        { num: 30, desc: "Lanterna para capacete ou manual", uni: "Pç", qty: 1 },
+        { num: 32, desc: "Volt-amperímetro alicate classe IV", uni: "Pç", qty: 1, laudo: 1, labs: ["Oficina do Alicate", "ITRA", "REMO", "CTMIG", "Helite", "Conserve", "Engelmig"] },
+      ];
+
+      const motoEpis = [
+        { num: 33, desc: "Balaclava resistente a chama", uni: "Un", qty: 2 },
+        { num: 34, desc: "Bolsa de Lona para acondicionar capacete, luva de vaqueta e óculos", uni: "Un", qty: 1 },
+        { num: 35, desc: "Bolsa para acondicionar luva isolante", uni: "Un", qty: 1 },
+        { num: 36, desc: "Bota de Segurança Cano Longo (BOTA DE CAMPANHA)", uni: "Pr", qty: 2 },
+        { num: 37, desc: "Bota impermeável – cano longo – de borracha", uni: "Pr", qty: 1 },
+        { num: 38, desc: "Calça de Uniforme com Tecido Resistente à Chama – condutibilidade, inflamabilidade e influências eletromagnéticas, com logotipo empresa", uni: "Un", qty: 3 },
+        { num: 39, desc: "Camisa de Uniforme manga longa com Tecido Resistente à Chama – condutibilidade, inflamabilidade e influências eletromagnéticas com logotipo empresa", uni: "Un", qty: 3 },
+        { num: 40, desc: "Capa impermeável para chuva (calça e blusa separadas, com faixa reflexiva)", uni: "Un", qty: 1 },
+        { num: 41, desc: "Capacete de segurança, classe B, com aba frontal e jugular", uni: "Un", qty: 1 },
+        { num: 43, desc: "Jaqueta de Uniforme com Tecido Resistente à Chama – condutibilidade, inflamabilidade e influências eletromagnéticas com logotipo empresa", uni: "Un", qty: 1 },
+        { num: 44, desc: "Joelheira, cotoveleira de proteção e Luvas de motociclista (equipamentos de proteção do motociclista). A luva deve ter fechamento no punho.", uni: "Cj", qty: 1 },
+        { num: 45, desc: "Luva de borracha isolante 0,5kV (classe 00)", uni: "Pr", qty: 1, laudo: 1, fabs: ["Salisbury", "North Safety", "GB", "Orion"], labs: ["Oficina do Alicate", "ITRA", "REMO", "CTMIG", "Helite", "Conserve", "Engelmig"] },
+        { num: 47, desc: "Luva de couro para proteção da luva de borracha isolante", uni: "Pr", qty: 1 },
+        { num: 48, desc: "Luva de vaqueta para trabalho leve", uni: "Pr", qty: 1 },
+        { num: 49, desc: "Óculos de segurança incolor para proteção de partículas multidirecionais", uni: "Un", qty: 1 },
+        { num: 50, desc: "Óculos de segurança lente escura tonalidade 2 ou 3 para proteção de partículas multidirecionais", uni: "Un", qty: 1 },
+        { num: 51, desc: "Protetor solar FPS 30", uni: "Un", qty: 1 },
+      ];
+
+      const motoChecklistVeiculo = [
+        "Documentação atualizada",
+        "Controle de manutenção (físico ou digital)",
+        "Câmera veicular",
+        "Rastreador veicular",
+        "Antena dupla",
+        "Baú de 90L",
+        "Baú com fixação de varas internas",
+        "Baú com faixas reflexivas",
+        "Baú com identificação 'a serviço da CEMIG'",
+        "Mata cachorro (aço tubular em peça única)",
+        "Pneu em condições de uso (s/ reformar)",
+        "Funilaria em boas condições",
+        "Todas as setas em correto funcionamento",
+        "Farol baixo e alto em correto funcionamento",
+        "Buzina em correto funcionamento",
+        "Capacete em bom estado de conservação",
+        "Capacete com faixa reflexiva",
+        "Viseira escamoteável ou de abertura total",
+        "Viseira transparente em condições de uso",
+        "Manete/manopla em condições de uso",
+      ];
+
+      // ════════════════════════════════════════════════════════
+      // DATA - ES2 (reusing from original)
+      // ════════════════════════════════════════════════════════
+      const es2Ferramentas = [
+        { num: 1, desc: "Alicate bomba d'água com cabo isolado", uni: "Pç", qty: 2 },
+        { num: 2, desc: "Alicate de compressão hidráulico (com corda e gancho)", uni: "Pç", qty: 1, laudo: 1, fabs: ["Hidramaq", "Solução", "Hubbel", "Izumi", "Grenlee"], labs: ["Oficina do Alicate", "ITRA", "REMO", "CTMIG", "Helite", "BHMIG", "GLOBALTEK"] },
+        { num: 3, desc: "Alicate de compressão mecânica (com corda e gancho) (OPCIONAL se substituído por alicate de compressão hidráulico)", uni: "Pç", qty: 1, laudo: 1, fabs: ["Hidramaq", "Tec-Ali", "Hubbel", "Solução"], labs: ["Oficina do Alicate", "ITRA", "REMO", "CTMIG", "Helite", "BHMIG", "GLOBALTEK"] },
+        { num: 4, desc: "Alicate de compressão eletro-hidráulico (com corda e gancho) (*)", uni: "Pç", qty: 1, laudo: 1, fabs: ["Hidramaq", "Solução", "Hubbel", "Izumi", "Grenlee"], labs: ["Oficina do Alicate", "ITRA", "REMO", "CTMIG", "Helite", "BHMIG", "GLOBALTEK"] },
+        { num: 5, desc: "Alicate profissional com cabo isolado", uni: "Pç", qty: 2 },
+        { num: 6, desc: "Amperímetro, voltímetro, ohmímetro, alicate, digital, display LCD", uni: "Pç", qty: 2, laudo: 3, fabs: ["Hidramaq", "Solução", "Hubbel", "Izumi", "Grenlee"], labs: ["Oficina do Alicate", "ITRA", "REMO", "CTMIG", "Helite", "BHMIG", "GLOBALTEK"] },
+        { num: 7, desc: "Analisador de Desvio de Registros (**)", uni: "Pç", qty: 1, laudo: 1, fabs: ["Montrel"] },
+        { num: 8, desc: "Arco de serra com lâmina", uni: "Pç", qty: 1 },
+        { num: 9, desc: "Bandeirolas para sinalização e suporte para fixação", uni: "Pç", qty: 10 },
+        { num: 11, desc: "Bastão pega-tudo cabeçote alumínio 32mm x 2600mm e sacola para acondicionar", uni: "Pç", qty: 1, laudo: 1, fabs: ["Terex"], labs: ["Oficina do Alicate", "ITRA", "REMO", "CTMIG", "Helite", "BHMIG", "GLOBALTEK"] },
+        { num: 12, desc: "Binóculo", uni: "Pç", qty: 1 },
+        { num: 13, desc: "Bolsa de lona porta fusível", uni: "Pç", qty: 1 },
+        { num: 14, desc: "Cabeçote, manobra, para grampo de aterramento", uni: "Pç", qty: 1 },
+        { num: 15, desc: "Cabeçote para corte de ramal de ligação até 35 mm²", uni: "Pç", qty: 1 },
+        { num: 16, desc: "Cabo isolado 1x53mm² (1x1/0) com garra para by-pass – 4 metros", uni: "Un", qty: 1, laudo: 1, fabs: ["Hidramaq", "Tec-Ali", "Hubbel", "Solução"], labs: ["Oficina do Alicate", "ITRA", "REMO", "CTMIG", "Helite", "BHMIG", "GLOBALTEK"] },
+        { num: 17, desc: "Calibrador portátil para ensaio em medidor kWh eletromecânico e eletrônico (**)", uni: "Pç", qty: 1, laudo: 1, fabs: ["Hidramaq", "Tec-Ali", "Hubbel", "Solução"], labs: ["Oficina do Alicate", "ITRA", "REMO", "CTMIG", "Helite", "BHMIG", "GLOBALTEK"] },
+        { num: 20, desc: "Calço emborrachado para veículo (veículos com estabilizador deverão também conter calços poliméricos para as sapatas)", uni: "Pç", qty: 2 },
+        { num: 23, desc: "Câmera com sensor de fadiga que registre os eventos, emita alerta sonoro e visual (OPICIONAL)", uni: "Pç", qty: 1 },
+        { num: 25, desc: "Câmera veicular conforme especificação da IT-RD-00022", uni: "Pç", qty: 1 },
+        { num: 26, desc: "Canivete", uni: "Pç", qty: 2 },
+        { num: 31, desc: "Catraca para 750 daN", uni: "Pç", qty: 1 },
+        { num: 32, desc: "Cavadeira com socador, comprimento de 1500 mm", uni: "Pç", qty: 1 },
+        { num: 36, desc: "Chave canhão de 3/8\" isolada (isolamento de cabo e extensão) – isolamento >= 1kV", uni: "Pç", qty: 2 },
+        { num: 37, desc: "Chave canhão de 7/16\" isolada (isolamento de cabo e extensão) – isolamento >= 1kV", uni: "Pç", qty: 2 },
+        { num: 38, desc: "Chave com catraca com cabo isolado para aplicação de conector perfuração", uni: "Pç", qty: 2 },
+        { num: 39, desc: "Chave de fenda isolada (isolamento de cabo e extensão) 6,5 x 150mm", uni: "Pç", qty: 2 },
+        { num: 40, desc: "Chave de fenda isolada (isolamento de cabo e extensão) 3 x 100mm", uni: "Pç", qty: 2 },
+        { num: 41, desc: "Chave de fenda isolada (isolamento de cabo e extensão) 5,5 x 150mm", uni: "Pç", qty: 2 },
+        { num: 42, desc: "Chave de impacto a bateria 180 Nm (com corda e gancho)", uni: "Pç", qty: 1 },
+        { num: 43, desc: "Chave Phillips isolada (isolamento de cabo e extensão) 6 x 150mm", uni: "Pç", qty: 2 },
+        { num: 44, desc: "Chave Phillips isolada (isolamento de cabo e extensão) 3 x 100mm (**)", uni: "Pç", qty: 1 },
+        { num: 45, desc: "Chave inglesa 200mm isolada", uni: "Pç", qty: 2 },
+        { num: 46, desc: "Chave inglesa 300mm isolada", uni: "Pç", qty: 2 },
+        { num: 48, desc: "Computador notebook (**)", uni: "Pç", qty: 1 },
+        { num: 49, desc: "Cone de sinalização, altura mínima 700mm", uni: "Pç", qty: 10 },
+        { num: 50, desc: "Conjunto chave allen em mm de 8; 6; 5; 4; 3; 2,5 e 2", uni: "Cj", qty: 1 },
+        { num: 51, desc: "Conjunto chave allen em polegadas de 1/4; 7/32; 3/16; 5/32; 9/64; 1/8; 7/64; 3/32 e 5/64", uni: "Cj", qty: 1 },
+        { num: 52, desc: "Chave hexagonal Allen 5 mm, tipo T", uni: "Pç", qty: 1 },
+        { num: 53, desc: "Conjunto de aterramento temporário para baixa tensão", uni: "Cj", qty: 2, laudo: 2, fabs: ["Terex", "Solução", "FCP"], labs: ["Oficina do Alicate", "ITRA", "REMO", "CTMIG", "Helite", "BHMIG", "GLOBALTEK"] },
+        { num: 54, desc: "Conjunto de aterramento temporário para média tensão monofásico", uni: "Cj", qty: 2, laudo: 2, fabs: ["Terex", "Solução", "FCP"], labs: ["Oficina do Alicate", "ITRA", "REMO", "CTMIG", "Helite", "BHMIG", "GLOBALTEK"] },
+        { num: 55, desc: "Conjunto de aterramento temporário para média tensão trifásico", uni: "Cj", qty: 2, laudo: 2, fabs: ["Terex", "Solução", "FCP"], labs: ["Oficina do Alicate", "ITRA", "REMO", "CTMIG", "Helite", "BHMIG", "GLOBALTEK"] },
+        { num: 56, desc: "Conjunto de aterramento temporário sela com grampo de aterramento e haste", uni: "Cj", qty: 3, laudo: 3, fabs: ["Terex"], labs: ["Oficina do Alicate", "ITRA", "REMO", "CTMIG", "Helite", "BHMIG", "GLOBALTEK"] },
+        { num: 57, desc: "Crachá de identificação", uni: "Pç", qty: 2 },
+        { num: 58, desc: "Decapador de cabos para RDC", uni: "Pç", qty: 1 },
+        { num: 59, desc: "Degrau de Fibra", uni: "Pç", qty: 4 },
+        { num: 61, desc: "Detector de MT de 1 a 35 kV", uni: "Pç", qty: 1, laudo: 1, fabs: ["Terex", "Solução", "Lider", "Steetc"], labs: ["Oficina do Alicate", "ITRA", "REMO", "CTMIG", "Helite", "BHMIG", "GLOBALTEK"] },
+        { num: 63, desc: "Dinamômetro 45 kgf para teste de padrão de entrada", uni: "Pç", qty: 1, laudo: 1, fabs: [], labs: ["Oficina do Alicate", "ITRA", "REMO", "CTMIG", "Helite", "BHMIG", "GLOBALTEK"] },
+        { num: 64, desc: "Dispositivo anti-queda de cartucho", uni: "Pç", qty: 1 },
+        { num: 65, desc: "Dispositivo by-pass para chave fusível (*)", uni: "Pç", qty: 1 },
+        { num: 66, desc: "Dispositivo de abertura em carga para MT", uni: "Pç", qty: 1, laudo: 1, fabs: ["Leal", "S&C", "Solução"], labs: ["Oficina do Alicate", "ITRA", "REMO", "CTMIG", "Helite", "BHMIG", "GLOBALTEK"] },
+        { num: 67, desc: "Dispositivo de fixação de placas de advertência", uni: "Pç", qty: 5 },
+        { num: 68, desc: "Dispositivos instaladores de linha de vida (agulhão + gancho)", uni: "Cj", qty: 1 },
+        { num: 74, desc: "Equipamento de comunicação de dados e voz conforme especificação da Contratante (incluindo câmera fotográfica e GPS)", uni: "Pç", qty: 1 },
+        { num: 75, desc: "Escada de extensão 2 x 4,25m (± 0,5m) de fibra", uni: "Pç", qty: 2 },
+        { num: 76, desc: "Escada singela 1 x 3,50m (± 0,5m) de fibra", uni: "Pç", qty: 1 },
+        { num: 77, desc: "Escova de aço tubular para condutores", uni: "Pç", qty: 2 },
+        { num: 78, desc: "Espora de aço DT", uni: "Pç", qty: 2 },
+        { num: 80, desc: "Esticador com correia ou moitão de 2 gornes para condutores CA/CAA", uni: "Pç", qty: 1 },
+        { num: 84, desc: "Estropo Cinta Tubular de 1m com identificação indelével da capacidade de carga 1000 daN", uni: "Pç", qty: 2 },
+        { num: 86, desc: "Ferramenta para aplicação de conector cunha (para chave de impacto)", uni: "Pç", qty: 1 },
+        { num: 87, desc: "Ferramenta para inspeção de poste de madeira", uni: "Pç", qty: 1 },
+        { num: 88, desc: "Fita de isolamento com recolhedor, zebrada amarela e preta 50 mm x 40 m", uni: "Pç", qty: 2 },
+        { num: 91, desc: "Garra para cabo CA/CAA 2/0 a 336", uni: "Pç", qty: 2 },
+        { num: 92, desc: "Garra para cabo CA/CAA 6 a 1/0", uni: "Pç", qty: 2 },
+        { num: 93, desc: "Garra para cabo de aço 6,4mm a 9,5mm", uni: "Pç", qty: 2 },
+        { num: 94, desc: "Grampo para aterramento temporário chave fusível", uni: "Pç", qty: 3 },
+        { num: 95, desc: "Grampo prendedor de lençol", uni: "Pç", qty: 8 },
+        { num: 96, desc: "Impressora Térmica Portátil", uni: "Pç", qty: 1, laudo: 1, hasSN: false, hasValidade: false, hasLaudoName: false, fabs: ["ZEBRA RW420", "ZEBRA ZQ520", "ZEBRA ZQ521", "BIXOLON XM7-40"] },
+        { num: 97, desc: "Inflador ou testador de luvas de borracha (*)", uni: "Pç", qty: 1 },
+        { num: 99, desc: "Kit Antirreprova (**)", uni: "Pç", qty: 1 },
+        { num: 100, desc: "Lâmina de serra", uni: "Pç", qty: 1 },
+        { num: 101, desc: "Lanterna", uni: "Pç", qty: 2 },
+        { num: 102, desc: "Lençol de borracha isolante para BT e sacola para acondicionar", uni: "Pç", qty: 10, laudo: 10, labs: ["Oficina do Alicate", "ITRA", "REMO", "CTMIG", "Helite", "BHMIG", "GLOBALTEK"] },
+        { num: 105, desc: "Lima murça chata", uni: "Pç", qty: 1 },
+        { num: 107, desc: "Marreta de aço de 2,5 kg", uni: "Pç", qty: 1 },
+        { num: 108, desc: "Martelo bola", uni: "Pç", qty: 1 },
+        { num: 110, desc: "Matriz para alicate hidráulico (162, 163, 236, 237, 238, 239, 242, 243, 245, 248, 249, 251, 252, 316, 321, D3, N e O)", uni: "Cj", qty: 1 },
+        { num: 111, desc: "Matriz para alicate mecânico (162, 163, 236, 237, 238, 239, 242, 243 e 245)", uni: "Cj", qty: 1 },
+        { num: 114, desc: "Moitão de 3 gornes de 1800 daN", uni: "Pç", qty: 1 },
+        { num: 116, desc: "Motopoda elétrica ou hidráulica", uni: "Pç", qty: 1 },
+        { num: 118, desc: "Motosserra elétrica portátil ou à combustão", uni: "Pç", qty: 1 },
+        { num: 120, desc: "Parafusadeira a bateria com engate rápido para bit hexagonal de 1/4", uni: "Pç", qty: 1 },
+        { num: 122, desc: "Placa de advertência 'não opere esta chave'", uni: "Pç", qty: 5 },
+        { num: 125, desc: "Ponteiro de aço 1/2 pol de mão", uni: "Pç", qty: 1 },
+        { num: 126, desc: "Recipiente aprovado pelo INMETRO para transporte e armazenamento de combustível para motosserra (*)", uni: "Pç", qty: 1 },
+        { num: 128, desc: "Registrador de tensão e Corrente BT - Mód. 8 PRODIST com GPRS", uni: "Pç", qty: 1, laudo: 1, fabs: ["Hidramaq", "Tec-Ali", "Hubbel", "Solução"], labs: ["Oficina do Alicate", "ITRA", "REMO", "CTMIG", "Helite", "BHMIG", "GLOBALTEK"] },
+        { num: 129, desc: "Sacola para ferramentas", uni: "Un", qty: 1 },
+        { num: 130, desc: "Sacola, p/ bastão telescópico (vara manobra) c/ terminal universal", uni: "Pç", qty: 1 },
+        { num: 132, desc: "Serrote curvo para poda", uni: "Pç", qty: 1 },
+        { num: 133, desc: "Sonda boroscópica 5m", uni: "Pç", qty: 1 },
+        { num: 134, desc: "Sonda, passa fio, cabo de 20 m", uni: "Pç", qty: 1 },
+        { num: 135, desc: "Suporte isolado para 1000 V,", uni: "Pç", qty: 1 },
+        { num: 138, desc: "Tesourão articulado 750mm (com corda e gancho)", uni: "Pç", qty: 1 },
+        { num: 140, desc: "Trado aço de 3/8\" para madeira", uni: "Pç", qty: 1 },
+        { num: 141, desc: "Trena de fibra de 50m", uni: "Pç", qty: 1 },
+        { num: 142, desc: "Vara, manobra, telescópica, 7 seções, fibra", uni: "Pç", qty: 1, laudo: 1, fabs: ["Hidramaq", "Tec-Ali", "Hubbel", "Solução"], labs: ["Oficina do Alicate", "ITRA", "REMO", "CTMIG", "Helite", "BHMIG", "GLOBALTEK"] },
+      ];
+
+      const es2Epis = [
+        { num: 144, desc: "Bolsa de Lona para acondicionar capacete, luva de vaqueta e óculos", uni: "Un", qty: 2 },
+        { num: 145, desc: "Bolsa de Lona para acondicionar manga isolante", uni: "Un", qty: 2 },
+        { num: 146, desc: "Bolsa para acondicionar luva isolante", uni: "Un", qty: 4 },
+        { num: 147, desc: "Botina de Segurança com cadarço", uni: "Pr", qty: 4 },
+        { num: 148, desc: "Calça de Uniforme com Tecido Resistente à Chama – condutibilidade, inflamabilidade e influências eletromagnéticas, com logotipo empresa", uni: "Un", qty: 6 },
+        { num: 149, desc: "Camisa de Uniforme manga longa com Tecido Resistente à Chama – condutibilidade, inflamabilidade e influências eletromagnéticas com logotipo empresa", uni: "Un", qty: 6 },
+        { num: 150, desc: "Capacete de segurança, classe B, com aba frontal e jugular", uni: "Un", qty: 2 },
+        { num: 151, desc: "Capuz de proteção solar com tecido Resistente à Chama", uni: "Un", qty: 2 },
+        { num: 153, desc: "Capa impermeável para chuva (calça e blusa separadas, com faixa reflexiva)", uni: "Un", qty: 2 },
+        { num: 154, desc: "Carretilha de dupla ação com corda e gancho para trabalho e resgate", uni: "Un", qty: 2, laudo: 3 },
+        { num: 155, desc: "Conjunto cinto paraquedista, talabarte de posicionamento com mosquetão de alumínio tripla trava e trava quedas", uni: "Cj", qty: 2, laudo: ["Cinto", "Talabarte", "Trava Quedas", "Cinto", "Talabarte", "Trava Quedas", "Cinto", "Talabarte", "Trava Quedas"], hasSN: false },
+        { num: 156, desc: "Conjunto composto por abafador de ruídos tipo concha, protetor facial acrílico e kit de montagem para utilização através do encaixe nas fendas laterais do capacete aba frontal tipo boné.", uni: "Pç", qty: 1 },
+        { num: 157, desc: "Corda de linha de vida 12mm – normatizadas pela NR18 (Cabos de fibra sintética) – 15 metros", uni: "Pç", qty: 2 },
+        { num: 158, desc: "EPI para operador de Motosserra – Capacete com viseira acoplado com abafador de ruído tipo concha, luvas, botina com biqueira e calça especificadas para a atividade", uni: "Pç", qty: 1 },
+        { num: 159, desc: "Garrafa térmica de 5 litros (1 garrafa para cada 2 pessoas)", uni: "Un", qty: 1 },
+        { num: 160, desc: "Jaqueta de Uniforme com Tecido Resistente à Chama (OPCIONAL, de acordo com a necessidade da região)", uni: "Un", qty: 2 },
+        { num: 161, desc: "Luva de borracha isolante 0,5kV (classe 00)", uni: "Pr", qty: 2, laudo: ["Luva 1", "Luva 2", "Luva 1", "Luva 2", "Luva 1", "Luva 2"], fabs: ["Salisbury", "Northsafety", "GB", "Orion"], labs: ["Oficina do Alicate", "ITRA", "REMO", "CTMIG", "Helite", "BHMIG", "GLOBALTEK"] },
+        { num: 162, desc: "Luva de borracha Isolante 17kV (classe 2) ou 26,5kV (classe 3) – Conforme nível de tensão da região", uni: "Pr", qty: 2, laudo: ["Luva 1", "Luva 2", "Luva 1", "Luva 2", "Luva 1", "Luva 2"], fabs: ["Salisbury", "Northsafety", "GB", "Orion"], labs: ["Oficina do Alicate", "ITRA", "REMO", "CTMIG", "Helite", "BHMIG", "GLOBALTEK"] },
+        { num: 164, desc: "Luva de segurança para operador de motosserra", uni: "Pç", qty: 1 },
+        { num: 165, desc: "Luva de couro para proteção da luva de borracha isolante", uni: "Pr", qty: 4 },
+        { num: 166, desc: "Luva de vaqueta para trabalho leve", uni: "Pr", qty: 2 },
+        { num: 167, desc: "Manga isolante para 1kV – (Classe 0)", uni: "Pr", qty: 2, laudo: ["Manga 1", "Manga 2", "Manga 1", "Manga 2", "Manga 1", "Manga 2"], fabs: ["Salisbury", "GB"], labs: ["Oficina do Alicate", "ITRA", "REMO", "CTMIG", "Helite", "BHMIG", "GLOBALTEK"] },
+        { num: 168, desc: "Mosquetão de aço dupla trava 22kN (para pontos de ancoragem)", uni: "Pç", qty: 4 },
+        { num: 169, desc: "Óculos de segurança incolor para proteção de partículas multidirecionais", uni: "Un", qty: 2 },
+        { num: 170, desc: "Óculos de segurança lente escura tonalidade 2 ou 3 para proteção de partículas multidirecionais", uni: "Un", qty: 2 },
+        { num: 171, desc: "Perneira de couro sem partes metálicas ou Bota de Campanha", uni: "Pr", qty: 2 },
+        { num: 173, desc: "Protetor solar FPS 30", uni: "Un", qty: 2 },
+        { num: 174, desc: "Sacola de Lona para acondicionar ferramenta e EPIs (catarina)", uni: "Un", qty: 2 },
+        { num: 175, desc: "Sacola de Lona para acondicionar linha de vida e cinto", uni: "Un", qty: 2 },
+      ];
+
+      const es2Kit = [
+        { num: 1, desc: "Caixa de ferramentas para acondicionamento dos itens – Capacidade Média 10L", uni: "PÇ", qty: 1 },
+        { num: 2, desc: "Cadeado médio", uni: "PÇ", qty: 1 },
+        { num: 3, desc: "Talhadeira tamanho Médio (25 cm)", uni: "PÇ", qty: 1 },
+        { num: 4, desc: "Marreta de 1 Kg", uni: "PÇ", qty: 1 },
+        { num: 5, desc: "Pincel Pequeno (15 cm)", uni: "PÇ", qty: 1 },
+        { num: 6, desc: "Gabarito / Molde alfabeto e Números", uni: "CJ", qty: 1 },
+        { num: 7, desc: "Lata de tinta pequena (50 ml)", uni: "PÇ", qty: 1 },
+        { num: 8, desc: "Chave de boca 16", uni: "PÇ", qty: 1 },
+        { num: 9, desc: "Parafuso Vazado (dispositivo para selar)", uni: "PÇ", qty: 5 },
+        { num: 10, desc: "Conector Bimetálico (Parafuso fendido)", uni: "PÇ", qty: 5 },
+        { num: 11, desc: "Parafuso terminal para Aterramento", uni: "PÇ", qty: 5 },
+        { num: 12, desc: "Fita Isolante tamanho Médio – 05 metros", uni: "PÇ", qty: 1 },
+        { num: 13, desc: "Fita Alta Fusão – 05 Metros", uni: "PÇ", qty: 1 },
+        { num: 14, desc: "Visor para Caixa de Medição tamanho Padrão", uni: "PÇ", qty: 5 },
+        { num: 15, desc: "Disjuntor Monopolar de 40A", uni: "PÇ", qty: 3 },
+        { num: 16, desc: "Disjuntor Monopolar de 70A", uni: "PÇ", qty: 2 },
+        { num: 17, desc: "Disjuntor Bipolar de 60A", uni: "PÇ", qty: 2 },
+        { num: 18, desc: "Disjuntor Tripolar de 50A", uni: "PÇ", qty: 1 },
+        { num: 19, desc: "Disjuntor Tripolar de 60A", uni: "PÇ", qty: 1 },
+        { num: 20, desc: "Parafuso para fixação de Medidor à caixa Medição", uni: "PÇ", qty: 5 },
+        { num: 21, desc: "Parafuso para fixação de Medidor ao Cavalete", uni: "PÇ", qty: 5 },
+        { num: 22, desc: "Tampão para vedação de furos de caixa Monofásica", uni: "PÇ", qty: 5 },
+        { num: 23, desc: "Tampão para vedação de furos de caixa Polifásica", uni: "PÇ", qty: 5 },
+        { num: 24, desc: "Terminal Tubular de Cobre para cabo 6mm", uni: "PÇ", qty: 5 },
+        { num: 25, desc: "Terminal Tubular de Cobre para cabo 10mm", uni: "PÇ", qty: 5 },
+        { num: 26, desc: "Terminal Tubular de Cobre para cabo 16mm", uni: "PÇ", qty: 5 },
+        { num: 27, desc: "Terminal Tubular de Cobre para cabo 25mm", uni: "PÇ", qty: 5 },
+        { num: 28, desc: "Terminal Tubular de Cobre para cabo 50mm", uni: "PÇ", qty: 5 },
+        { num: 29, desc: "Flanela / estopa para limpeza", uni: "PÇ", qty: 1 },
+        { num: 30, desc: "1 metro de cabo de cobre 6mm (para rabicho)", uni: "M", qty: 1 },
+        { num: 31, desc: "1 metro de cabo de cobre 10mm (para rabicho)", uni: "M", qty: 1 },
+        { num: 32, desc: "1 metro de cabo de cobre 16mm (para rabicho)", uni: "M", qty: 1 },
+      ];
+
+      const es2ChecklistVeiculo = [
+        "Veículo próprio",
+        "Veículo locado",
+        "Documentação atualizada",
+        "Controle de manutenção do veículo (físico ou digital)",
+        "Câmera veicular",
+        "Rastreador veicular",
+        "Sistema de Amarração de Escadas",
+        "Pneu em condições de uso (s/ reformar eixo diant.)",
+        "Pneu de mesmo desenho no mesmo eixo",
+        "Identificação 'à serviço da CEMIG'",
+        "Funilaria em boas condições",
+        "Todas as setas em correto funcionamento",
+        "Farol alto e baixo em correto funcionamento",
+        "Giroflex",
+        "Silibim (iluminação auxiliar)",
+        "Buzina em correto funcionamento",
+        "Kit resgate (fabricante Soluções)",
+      ];
+
+      const es2ChecklistEscada = [
+        "SEM EQUIPAMENTO",
+        "Escada giratória em correto funcionamento",
+        "Placa de identificação da torre",
+        "Laudo da escada giratória",
+        "Controle de manutenção da escada (físico ou digital)",
+        "Equipamento com fabricação menor a 15 anos",
+        "Equipamento com gráfico de carga visível",
+        "Placa de identificação da cesta aérea",
+        "Laudo de inspeção de manutenção válido",
+        "Manutenção anual válida",
+        "Laudo de emissão acústica válido (4 em 4 anos)",
+        "Controles identificados e protegidos contra uso inadvertido",
+        "Ponto de aterramento no chassi e equipamento",
+        "Inclinômetro",
+        "Bloqueio de sapata por braço fora do berço",
+        "Válvula de segurança com holding dos cilindros do braço",
+        "Ponto de ancoragem",
+        "Sistema de parada de emergência inferior e superior",
+        "Sistema de operação de emergência",
+        "Sistema de nivelamento da cesta aérea",
+        "Liner e teste para 46 kV (inserir validade do laudo nas observações)",
+      ];
+
+      // ════════════════════════════════════════════════════════
+      // RENDER FUNCTIONS
+      // ════════════════════════════════════════════════════════
+      let idCounter = 0;
+      function uid() { return 'f' + (++idCounter); }
+
+      function renderLaudo(n, fabs, labs, itemKey, hasValidade = true, hasSN = true, hasLaudoName = true) {
+        let html = '<div class="laudo-row">';
+        let laudosList = [];
+        if (Array.isArray(n)) {
+          laudosList = n;
+        } else {
+          for (let i = 1; i <= n; i++) laudosList.push(n > 1 ? i + 'º Laudo' : 'Laudo');
+        }
+
+        laudosList.forEach((laudoName, index) => {
+          const laudoKey = itemKey + '__L' + (index + 1);
+          html += `<div class="laudo-grid" style="margin-bottom:${laudosList.length > 1 ? '8px' : '0'}">
+      ${hasLaudoName ? `<span style="font-size:11px;font-weight:700;color:var(--cemig-blue);">${laudoName}</span>` : ''}
+      ${hasSN ? `<div class="radio-group">
+        <label><input type="radio" name="${laudoKey}" value="S"> S</label>
+        <label><input type="radio" name="${laudoKey}" value="N"> N</label>
+      </div>` : ''}
+      ${(laudoName !== 'Talabarte' && laudoName !== 'Trava Quedas') ? `<label>Nº controle:</label>
+      <input type="text" placeholder="___________" style="width:120px;" data-laudo="${laudoKey}__ctrl">` : ''}
+      ${hasValidade ? `<label>Validade:</label><input type="text" placeholder="__/__/____" style="width:100px;" data-laudo="${laudoKey}__val">` : ''}
+    </div>`;
+        });
+        if (fabs && fabs.length > 0) {
+          html += `<div class="fab-row"><span>Fabricantes:</span>`;
+          fabs.forEach(f => { const k = f.replace(/[\s\/\'\"]+/g, '_'); html += `<label class="checkbox-inline"><input type="checkbox" data-fab="${itemKey}__${k}"> ${f}</label>`; });
+          html += `<label class="checkbox-inline"><input type="checkbox" data-fab="${itemKey}__Outro" onchange="toggleOutroFabLab(this)"> Outro</label>`;
+          html += `<input type="text" class="outro-text hidden" data-fab-outro="${itemKey}" placeholder="Especifique o fabricante..." style="margin-left:4px;width:180px;font-size:11px;padding:3px 6px;border:1px solid #ccc;border-radius:4px;">`;
+          html += `</div>`;
+        }
+        if (labs && labs.length > 0) {
+          html += `<div class="fab-row"><span>Laboratórios:</span>`;
+          labs.forEach(l => { const k = l.replace(/[\s\/\'\"]+/g, '_'); html += `<label class="checkbox-inline"><input type="checkbox" data-lab="${itemKey}__${k}"> ${l}</label>`; });
+          html += `<label class="checkbox-inline"><input type="checkbox" data-lab="${itemKey}__Outro" onchange="toggleOutroFabLab(this)"> Outro</label>`;
+          html += `<input type="text" class="outro-text hidden" data-lab-outro="${itemKey}" placeholder="Especifique o laboratório..." style="margin-left:4px;width:180px;font-size:11px;padding:3px 6px;border:1px solid #ccc;border-radius:4px;">`;
+          html += `</div>`;
+        }
+        html += '</div>';
+        return html;
+      }
+
+      function renderTableQty(items, tbodyId) {
+        const tbody = document.getElementById(tbodyId);
+        let html = '';
+        items.forEach(item => {
+          const itemKey = tbodyId + '__' + item.num;
+          html += `<tr>
+      <td class="item-num">${item.num}</td>
+      <td>${item.desc}</td>
+      <td class="item-uni">${item.uni}</td>
+      <td class="item-qty">
+        <input class="req-input" type="number" min="0" value="${item.qty}" data-req="${itemKey}" style="width:50px; text-align:center; border: 1px solid #ddd; background: #fff; border-radius: 3px;" title="Quantidade Exigida Editável">
+      </td>
+      <td><input class="qty-input" type="number" min="0" placeholder="0" data-item="${itemKey}"></td>
+    </tr>`;
+          if (item.laudo) {
+            html += `<tr><td colspan="5" style="padding:4px 10px 8px;">
+        ${renderLaudo(item.laudo, item.fabs, item.labs, itemKey, item.hasValidade !== false, item.hasSN !== false, item.hasLaudoName !== false)}
+      </td></tr>`;
+          }
+        });
+        tbody.innerHTML = html;
+      }
+
+      function renderInfraTable() {
+        const tbody = document.getElementById('tb-infra-items');
+        let html = '';
+        infraItems.forEach(item => {
+          const name = 'infra-item-' + item.num;
+          const commentId = 'nc-comment-' + item.num;
+          const textareaId = 'nc-text-' + item.num;
+          html += `<tr>
+      <td class="item-num">${item.num}</td>
+      <td>
+        ${item.desc}
+        <div class="nc-comment" id="${commentId}">
+          <textarea id="${textareaId}" placeholder="Descreva a não conformidade..."></textarea>
+        </div>
+      </td>
+      <td>
+        <div class="na-c-nc">
+          <label><input type="radio" name="${name}" value="NA" onchange="toggleNcComment(${item.num}, this.value)"><span>N-A</span></label>
+          <label><input type="radio" name="${name}" value="C"  onchange="toggleNcComment(${item.num}, this.value)"><span>C</span></label>
+          <label><input type="radio" name="${name}" value="NC" onchange="toggleNcComment(${item.num}, this.value)"><span>NC</span></label>
+        </div>
+      </td>
+    </tr>`;
+        });
+        tbody.innerHTML = html;
+      }
+
+      function toggleNcComment(itemNum, value) {
+        const commentDiv = document.getElementById('nc-comment-' + itemNum);
+        const textarea = document.getElementById('nc-text-' + itemNum);
+        if (value === 'NC') {
+          commentDiv.classList.add('visible');
+          textarea.required = true;
+        } else {
+          commentDiv.classList.remove('visible');
+          textarea.required = false;
+          textarea.value = '';
+        }
+      }
+
+
+      function renderAlmoxTable() {
+        const tbody = document.getElementById('tb-almox-items');
+        let html = '';
+        infraItems.forEach(item => {
+          const name = 'almox-item-' + item.num;
+          const commentId = 'nc-almox-comment-' + item.num;
+          const textareaId = 'nc-almox-text-' + item.num;
+          html += `<tr>
+      <td class="item-num">${item.num}</td>
+      <td>
+        ${item.desc}
+        <div class="nc-comment" id="${commentId}">
+          <textarea id="${textareaId}" placeholder="Descreva a não conformidade..."></textarea>
+        </div>
+      </td>
+      <td>
+        <div class="na-c-nc">
+          <label><input type="radio" name="${name}" value="NA" onchange="toggleNcAlmoxComment(${item.num}, this.value)"><span>N-A</span></label>
+          <label><input type="radio" name="${name}" value="C"  onchange="toggleNcAlmoxComment(${item.num}, this.value)"><span>C</span></label>
+          <label><input type="radio" name="${name}" value="NC" onchange="toggleNcAlmoxComment(${item.num}, this.value)"><span>NC</span></label>
+        </div>
+      </td>
+    </tr>`;
+        });
+        tbody.innerHTML = html;
+      }
+
+      function toggleNcAlmoxComment(itemNum, value) {
+        const commentDiv = document.getElementById('nc-almox-comment-' + itemNum);
+        const textarea = document.getElementById('nc-almox-text-' + itemNum);
+        if (value === 'NC') {
+          commentDiv.classList.add('visible');
+          textarea.required = true;
+        } else {
+          commentDiv.classList.remove('visible');
+          textarea.required = false;
+          textarea.value = '';
+        }
+      }
+
+      function renderChecklist(items, divId) {
+        const div = document.getElementById(divId);
+        div.innerHTML = items.map((item, i) =>
+          `<div class="checklist-item">
+      <input type="checkbox" id="cl-${divId}-${i}">
+      <label for="cl-${divId}-${i}">${item}</label>
+    </div>`
+        ).join('');
+      }
+
+      // ════════════════════════════════════════════════════════
+      // NAVIGATION
+      // ════════════════════════════════════════════════════════
+      let currentForm = null;
+
+      function showForm(formId) {
+        document.getElementById('home-screen').classList.add('hidden');
+        ['form-infra', 'form-moto', 'form-es2', 'form-amb', 'form-almox'].forEach(id => document.getElementById(id).classList.add('hidden'));
+        document.getElementById('form-' + formId).classList.remove('hidden');
+        currentForm = formId;
+        window.scrollTo(0, 0);
+      }
+
+      function goHome() {
+        ['form-infra', 'form-moto', 'form-es2', 'form-amb', 'form-almox'].forEach(id => document.getElementById(id).classList.add('hidden'));
+        document.getElementById('home-screen').classList.remove('hidden');
+        currentForm = null;
+        window.scrollTo(0, 0);
+      }
+
+      function toggleOutro(el, targetId) {
+        const outroInput = document.getElementById(targetId);
+        if (el.value === 'Outro') {
+          outroInput.classList.remove('hidden');
+        } else {
+          outroInput.classList.add('hidden');
+        }
+      }
+
+      function toggleOutroFabLab(checkbox) {
+        const row = checkbox.closest('.fab-row');
+        const textInput = row.querySelector('.outro-text');
+        if (checkbox.checked) {
+          textInput.classList.remove('hidden');
+          textInput.focus();
+        } else {
+          textInput.classList.add('hidden');
+          textInput.value = '';
+        }
+      }
+
+      function resetForm(formId) {
+        if (!confirm('Limpar todos os campos deste formulário?')) return;
+        const container = document.getElementById('form-' + formId);
+        container.querySelectorAll('input, textarea, select').forEach(el => {
+          if (el.type === 'checkbox' || el.type === 'radio') {
+            el.checked = false;
+          } else if (el.classList.contains('req-input')) {
+            el.value = el.defaultValue;
+          } else {
+            el.value = '';
+          }
+        });
+      }
+
+      // ════════════════════════════════════════════════════════
+      // EXPORT PDF
+      // ════════════════════════════════════════════════════════
+      function showExportOverlay(msg) {
+        const overlay = document.getElementById('export-overlay');
+        const text = document.getElementById('export-overlay-text');
+        if (text) text.textContent = msg || 'Preparando exportação...';
+        overlay.classList.add('active');
+      }
+
+      function hideExportOverlay() {
+        document.getElementById('export-overlay').classList.remove('active');
+      }
+
+      function validateFormNC(formId) {
+        if (formId !== 'infra' && formId !== 'almox') return true;
+        if (!document.getElementById('form-' + formId).classList.contains('hidden') === false) {
+          return true;
+        }
+        const visibleComments = document.querySelectorAll('#form-' + formId + ' .nc-comment.visible textarea');
+        const empty = Array.from(visibleComments).filter(t => !t.value.trim());
+        if (empty.length > 0) {
+          empty[0].focus();
+          alert('O preenchimento da observação é OBRIGATÓRIO para todos os itens marcados como NC (Não Conforme). Verifique e preencha antes de prosseguir.');
+          return false;
+        }
+        return true;
+      }
+
+      function exportPDF() {
+        if (!validateFormNC(currentFormType)) return;
+        showExportOverlay('Gerando PDF... Aguarde.');
+        setTimeout(() => {
+          window.print();
+          hideExportOverlay();
+        }, 600);
+      }
+
+      // ════════════════════════════════════════════════════════
+      // EXPORT EXCEL
+      // ════════════════════════════════════════════════════════
+      function exportExcel(formId) {
+        if (!validateFormNC(formId)) return;
+        showExportOverlay('Gerando planilha Excel... Aguarde.');
+        setTimeout(() => {
+          try {
+            const wb = XLSX.utils.book_new();
+            const today = new Date().toLocaleDateString('pt-BR');
+
+            if (formId === 'infra') {
+              exportInfraExcel(wb, today);
+            } else if (formId === 'moto') {
+              exportMotoExcel(wb, today);
+            } else if (formId === 'es2') {
+              exportES2Excel(wb, today);
+            } else if (formId === 'amb') {
+              exportAmbExcel(wb, today);
+            } else if (formId === 'almox') {
+              exportAlmoxExcel(wb, today);
+            } else if (false) {
+              exportAmbExcel(wb, today);
+            }
+
+            const formNames = { infra: 'Infraestrutura', moto: 'Motociclistas', es2: 'Multifuncional_ES2', amb: 'Ambiental', almox: 'Almoxarifado' };
+            XLSX.writeFile(wb, `ATE_${formNames[formId]}_${today.replace(/\//g, '-')}.xlsx`);
+          } catch (e) {
+            console.error('Erro na exportação:', e);
+            alert('Ocorreu um erro durante a exportação. Tente novamente.');
+          } finally {
+            hideExportOverlay();
+          }
+        }, 400);
+      }
+
+      function getVal(selector) {
+        const el = document.querySelector(selector);
+        return el ? el.value : '';
+      }
+
+      function getRadio(name) {
+        const el = document.querySelector(`input[name="${name}"]:checked`);
+        return el ? el.value : '';
+      }
+
+      function exportInfraExcel(wb, today) {
+        // Info sheet
+        const info = [
+          ['FORMULÁRIO ATE – INFRAESTRUTURA ADMINISTRATIVA'],
+          ['Data de exportação', today],
+          [''],
+          ['ENDEREÇO'],
+          ['Av./Rua', getVal('[data-field="infra-endereco"]')],
+          ['Número', getVal('[data-field="infra-numero"]')],
+          ['Bairro', getVal('[data-field="infra-bairro"]')],
+          ['Cidade', getVal('[data-field="infra-cidade"]')],
+          [''],
+          ['RESPONSÁVEL'],
+          ['Nome', getVal('[data-field="infra-resp-nome"]')],
+          ['Matrícula', getVal('[data-field="infra-resp-cpf"]')],
+          ['Função', getVal('[data-field="infra-resp-funcao"]')],
+          [''],
+          ['AGENTES EXECUTORES'],
+          ['Agente 1', getVal('[data-field="infra-agente1"]'), 'Matrícula', getVal('[data-field="infra-mat1"]')],
+          ['Agente 2', getVal('[data-field="infra-agente2"]'), 'Matrícula', getVal('[data-field="infra-mat2"]')],
+          ['Agente 3', getVal('[data-field="infra-agente3"]'), 'Matrícula', getVal('[data-field="infra-mat3"]')],
+          [''],
+          ['Observações', getVal('[data-field="infra-obs"]')],
+        ];
+        const ws1 = XLSX.utils.aoa_to_sheet(info);
+        XLSX.utils.book_append_sheet(wb, ws1, 'Informações');
+
+        // Items sheet
+        const itemRows = [['Item', 'Descrição', 'Avaliação']];
+        infraItems.forEach(item => {
+          const val = getRadio('infra-item-' + item.num);
+          const label = val === 'NA' ? 'N-A' : val === 'C' ? 'Conforme' : val === 'NC' ? 'Não Conforme' : '';
+          itemRows.push([item.num, item.desc, label]);
+        });
+        const ws2 = XLSX.utils.aoa_to_sheet(itemRows);
+        ws2['!cols'] = [{ wch: 6 }, { wch: 80 }, { wch: 15 }];
+        XLSX.utils.book_append_sheet(wb, ws2, 'Itens de Avaliação');
+      }
+
+
+      function exportAlmoxExcel(wb, today) {
+        const info = [
+          ['FORMULÁRIO ATE – ALMOXARIFADO'],
+          ['Data de exportação', today],
+          [''],
+          ['ENDEREÇO'],
+          ['Av./Rua', getVal('[data-field="almox-endereco"]')],
+          ['Número', getVal('[data-field="almox-numero"]')],
+          ['Bairro', getVal('[data-field="almox-bairro"]')],
+          ['Cidade', getVal('[data-field="almox-cidade"]')],
+          [''],
+          ['RESPONSÁVEL'],
+          ['Nome', getVal('[data-field="almox-resp-nome"]')],
+          ['Matrícula', getVal('[data-field="almox-resp-mat"]')],
+          ['Função', getVal('[data-field="almox-resp-funcao"]')],
+          [''],
+          ['AGENTES EXECUTORES'],
+          ['Agente 1', getVal('[data-field="almox-agente1"]'), 'Matrícula', getVal('[data-field="almox-mat1"]')],
+          ['Agente 2', getVal('[data-field="almox-agente2"]'), 'Matrícula', getVal('[data-field="almox-mat2"]')],
+          ['Agente 3', getVal('[data-field="almox-agente3"]'), 'Matrícula', getVal('[data-field="almox-mat3"]')],
+          [''],
+          ['Observações', getVal('[data-field="almox-obs"]')],
+        ];
+        const ws1 = XLSX.utils.aoa_to_sheet(info);
+        XLSX.utils.book_append_sheet(wb, ws1, 'Informações');
+
+        const itemRows = [['Item', 'Descrição', 'Avaliação']];
+        infraItems.forEach(item => {
+          const val = getRadio('almox-item-' + item.num);
+          const label = val === 'NA' ? 'N-A' : val === 'C' ? 'Conforme' : val === 'NC' ? 'Não Conforme' : '';
+          itemRows.push([item.num, item.desc, label]);
+        });
+        const ws2 = XLSX.utils.aoa_to_sheet(itemRows);
+        ws2['!cols'] = [{ wch: 6 }, { wch: 80 }, { wch: 15 }];
+        XLSX.utils.book_append_sheet(wb, ws2, 'Itens de Avaliação');
+      }
+
+      function exportMotoExcel(wb, today) {
+        const container = document.getElementById('form-moto');
+        const info = [
+          ['FORMULÁRIO ATE – EQUIPES DE MOTOCICLISTAS'],
+          ['Data de exportação', today],
+          [''],
+          ['AGENTES EXECUTORES'],
+          ['Agente 1', getVal('[data-field="moto-agente1"]'), 'Matrícula', getVal('[data-field="moto-mat1"]')],
+          ['Agente 2', getVal('[data-field="moto-agente2"]'), 'Matrícula', getVal('[data-field="moto-mat2"]')],
+          ['Agente 3', getVal('[data-field="moto-agente3"]'), 'Matrícula', getVal('[data-field="moto-mat3"]')],
+          [''],
+          ['Local', getRadio('moto-local') || getVal('[data-field="moto-outro-local"]')],
+          ['Data', getVal('[data-field="moto-data"]')],
+          [''],
+          ['EQUIPE'],
+          ['Nome', getVal('[data-field="moto-nome1"]')],
+          ['CPF', getVal('[data-field="moto-cpf1"]')],
+          ['Crachá', getVal('[data-field="moto-cracha1"]')],
+          [''],
+          ['VEÍCULO'],
+          ['Placa', getVal('[data-field="moto-placa"]')],
+          ['Modelo', getVal('[data-field="moto-modelo"]')],
+          ['Marca', getVal('[data-field="moto-marca"]')],
+          ['Ano', getVal('[data-field="moto-ano"]')],
+          ['Veículo Próprio', getVal('[data-field="moto-veiculo-proprio"]')],
+          ['Veículo Locado', getVal('[data-field="moto-veiculo-locado"]')],
+          [''],
+          ['Observações Ferramentas', getVal('[data-field="moto-obs-ferr"]')],
+          ['Observações Veículo', getVal('[data-field="moto-obs-veic"]')],
+        ];
+        const ws1 = XLSX.utils.aoa_to_sheet(info);
+        XLSX.utils.book_append_sheet(wb, ws1, 'Informações');
+
+        // Ferramental + EPIs
+        const rows = [['Item', 'Descrição', 'Uni.', 'Qtd. Exigida', 'Qtd. Pendente']];
+        collectTableData(container, 'tb-moto-ferramentas', motoFerramentas, rows);
+        collectTableData(container, 'tb-moto-epis', motoEpis, rows);
+        const ws2 = XLSX.utils.aoa_to_sheet(rows);
+        ws2['!cols'] = [{ wch: 6 }, { wch: 70 }, { wch: 6 }, { wch: 12 }, { wch: 14 }];
+        XLSX.utils.book_append_sheet(wb, ws2, 'Ferramentas e EPIs');
+
+        // Checklist
+        const clRows = [['Item', 'Conforme']];
+        const clDiv = document.getElementById('checklist-moto-veiculo');
+        clDiv.querySelectorAll('.checklist-item').forEach((el, i) => {
+          const checked = el.querySelector('input[type="checkbox"]').checked;
+          clRows.push([motoChecklistVeiculo[i], checked ? 'Sim' : 'Não']);
+        });
+        const ws3 = XLSX.utils.aoa_to_sheet(clRows);
+        ws3['!cols'] = [{ wch: 50 }, { wch: 10 }];
+        XLSX.utils.book_append_sheet(wb, ws3, 'Checklist Veículo');
+      }
+
+      function exportES2Excel(wb, today) {
+        const container = document.getElementById('form-es2');
+        const info = [
+          ['FORMULÁRIO ATE – MULTIFUNCIONAL ES2'],
+          ['Data de exportação', today],
+          [''],
+          ['AGENTES EXECUTORES'],
+          ['Agente 1', getVal('[data-field="es2-agente1"]'), 'Matrícula', getVal('[data-field="es2-mat1"]')],
+          ['Agente 2', getVal('[data-field="es2-agente2"]'), 'Matrícula', getVal('[data-field="es2-mat2"]')],
+          ['Agente 3', getVal('[data-field="es2-agente3"]'), 'Matrícula', getVal('[data-field="es2-mat3"]')],
+          [''],
+          ['Local', getRadio('es2-local') || getVal('[data-field="es2-outro-local"]')],
+          ['Data', getVal('[data-field="es2-data"]')],
+          [''],
+          ['EQUIPE'],
+          ['Nome 1', getVal('[data-field="es2-nome1"]'), 'Matrícula', getVal('[data-field="es2-cpf1"]'), 'Crachá', getVal('[data-field="es2-cracha1"]')],
+          ['Nome 2', getVal('[data-field="es2-nome2"]'), 'Matrícula', getVal('[data-field="es2-cpf2"]'), 'Crachá', getVal('[data-field="es2-cracha2"]')],
+          [''],
+          ['VEÍCULO'],
+          ['Placa', getVal('[data-field="es2-placa"]'), 'Modelo', getVal('[data-field="es2-modelo"]')],
+          ['Marca', getVal('[data-field="es2-marca-veic"]'), 'Ano', getVal('[data-field="es2-ano"]')],
+          ['Motorista', getVal('[data-field="es2-motorista"]'), 'Matrícula', getVal('[data-field="es2-cpf-mot"]')],
+          ['Tipo Equipamento', getRadio('es2-tipo-equip')],
+          ['Marca Equip.', getVal('[data-field="es2-marca-equip"]'), 'Modelo Equip.', getVal('[data-field="es2-modelo-equip"]'), 'Ano Equip.', getVal('[data-field="es2-ano-equip"]')],
+          [''],
+          ['Obs. Ferramentas', getVal('[data-field="es2-obs-ferr"]')],
+          ['Obs. Veículo', getVal('[data-field="es2-obs-veic"]')],
+          ['Obs. Kit', getVal('[data-field="es2-obs-kit"]')],
+        ];
+        const ws1 = XLSX.utils.aoa_to_sheet(info);
+        XLSX.utils.book_append_sheet(wb, ws1, 'Informações');
+
+        // Ferramentas
+        const ferrRows = [['Item', 'Descrição', 'Uni.', 'Qtd. Exigida', 'Qtd. Pendente']];
+        collectTableData(container, 'tb-es2-ferramentas', es2Ferramentas, ferrRows);
+        const ws2 = XLSX.utils.aoa_to_sheet(ferrRows);
+        ws2['!cols'] = [{ wch: 6 }, { wch: 70 }, { wch: 6 }, { wch: 12 }, { wch: 14 }];
+        XLSX.utils.book_append_sheet(wb, ws2, 'Ferramentas');
+
+        // EPIs
+        const epiRows = [['Item', 'Descrição', 'Uni.', 'Qtd. Exigida', 'Qtd. Pendente']];
+        collectTableData(container, 'tb-es2-epis', es2Epis, epiRows);
+        const ws3 = XLSX.utils.aoa_to_sheet(epiRows);
+        ws3['!cols'] = [{ wch: 6 }, { wch: 70 }, { wch: 6 }, { wch: 12 }, { wch: 14 }];
+        XLSX.utils.book_append_sheet(wb, ws3, 'EPIs');
+
+        // Kit
+        const kitRows = [['Item', 'Descrição', 'Uni.', 'Qtd. Exigida', 'Qtd. Pendente']];
+        collectTableData(container, 'tb-es2-kit', es2Kit, kitRows);
+        const ws4 = XLSX.utils.aoa_to_sheet(kitRows);
+        ws4['!cols'] = [{ wch: 6 }, { wch: 70 }, { wch: 6 }, { wch: 12 }, { wch: 14 }];
+        XLSX.utils.book_append_sheet(wb, ws4, 'Kit Antirreprova');
+
+        // Checklists
+        const clRows = [['Item', 'Conforme']];
+        const clDiv1 = document.getElementById('checklist-es2-veiculo');
+        clDiv1.querySelectorAll('.checklist-item').forEach((el, i) => {
+          clRows.push([es2ChecklistVeiculo[i], el.querySelector('input').checked ? 'Sim' : 'Não']);
+        });
+        clRows.push(['', '']);
+        clRows.push(['EQUIPAMENTO (Escada/Cesta)', '']);
+        const clDiv2 = document.getElementById('checklist-es2-escada');
+        clDiv2.querySelectorAll('.checklist-item').forEach((el, i) => {
+          clRows.push([es2ChecklistEscada[i], el.querySelector('input').checked ? 'Sim' : 'Não']);
+        });
+        const ws5 = XLSX.utils.aoa_to_sheet(clRows);
+        ws5['!cols'] = [{ wch: 55 }, { wch: 10 }];
+        XLSX.utils.book_append_sheet(wb, ws5, 'Checklist Veículo');
+      }
+
+      function collectTableData(container, tbodyId, dataArray, rows) {
+        dataArray.forEach(item => {
+          const itemKey = tbodyId + '__' + item.num;
+          const reqInput = container.querySelector(`.req-input[data-req="${itemKey}"]`);
+          const reqQty = reqInput ? reqInput.value : item.qty;
+
+          const input = container.querySelector(`.qty-input[data-item="${itemKey}"]`);
+          const pendente = input ? input.value || '' : '';
+          rows.push([item.num, item.desc, item.uni, reqQty, pendente]);
+        });
+      }
+
+
+      function exportAmbExcel(wb, today) {
+        function getVal(field) {
+          const el = document.querySelector('[data-field="' + field + '"]');
+          return el ? el.value : '';
+        }
+        function getRadio(name) {
+          const el = document.querySelector('input[name="' + name + '"]:checked');
+          return el ? el.value : '';
+        }
+        function getCheck(id) {
+          const el = document.getElementById(id);
+          return (el && el.checked) ? 'Sim' : 'Não';
+        }
+        const rows = [
+          ['FORMULÁRIO ATE – PARTE AMBIENTAL'],
+          ['Data de exportação', today],
+          [''],
+          ['IDENTIFICAÇÃO'],
+          ['Contratada', getVal('amb-contratada')],
+          ['Município', getVal('amb-municipio')],
+          ['Técnico MA', getVal('amb-tecnico')],
+          ['CRT Nº', getVal('amb-crt')],
+          [''],
+          ['AGENTES EXECUTORES'],
+          ['Agente 1', getVal('amb-agente1'), 'Matrícula', getVal('amb-mat-ag1')],
+          ['Agente 2', getVal('amb-agente2'), 'Matrícula', getVal('amb-mat-ag2')],
+          ['Agente 3', getVal('amb-agente3'), 'Matrícula', getVal('amb-mat-ag3')],
+          [''],
+          ['CHECKLIST AMBIENTAL'],
+          ['Abastecimento de Água', getRadio('amb-agua'), 'Obs:', getVal('amb-agua-obs')],
+          ['Coleta de Esgoto', getRadio('amb-esgoto'), 'Obs:', getVal('amb-esgoto-obs')],
+          ['Armazenamento de Resíduos', getCheck('amb-residuos'), 'Obs:', getVal('amb-residuos-obs')],
+          ['Armazenamento de Produtos Químicos', getCheck('amb-quimicos')],
+          ['Equipamentos com Óleo (Bacia)', getRadio('amb-oleo'), 'Obs:', getVal('amb-oleo-obs')],
+          ['Kit PAE', getCheck('amb-pae'), 'Obs:', getVal('amb-pae-obs')],
+          ['Monitoramento Fumaça Preta', getRadio('amb-fumaca'), 'Obs:', getVal('amb-fumaca-obs')],
+          ['Depósito de Postes', getCheck('amb-postes'), 'Obs:', getVal('amb-postes-obs')],
+          ['Registro de Motosserras (IEF)', getCheck('amb-motosserras'), 'Obs:', getVal('amb-motosserras-obs')],
+          ['Triturador de Poda', getCheck('amb-triturador'), 'Obs:', getVal('amb-triturador-obs')],
+          [''],
+          ['VISITA AO PÁTIO'],
+          ['Água Parada', getCheck('amb-patio-1')],
+          ['Queima de Resíduos', getCheck('amb-patio-2')],
+          ['Lavagem de Veículos', getCheck('amb-patio-3')],
+          ['Captura de Fauna', getCheck('amb-patio-4')],
+          ['Cisternas/Fossas não declaradas', getCheck('amb-patio-5')],
+          ['Observação Geral Pátio', getVal('amb-patio-obs')],
+          [''],
+          ['ALOJAMENTO'],
+          ['Sem Vazamentos', getCheck('amb-alojamento'), 'Obs:', getVal('amb-alojamento-obs')],
+          [''],
+          ['BOAS PRÁTICAS'],
+          ['Coleta Chuva', getCheck('amb-boas-1')],
+          ['Reaproveita Água', getCheck('amb-boas-2')],
+          ['Conscientização', getCheck('amb-boas-3')],
+          ['Coleta Seletiva', getCheck('amb-boas-4')],
+          ['Observação', getVal('amb-boas-obs')],
+          [''],
+          ['ENCERRAMENTO'],
+          ['Realizada por', getVal('amb-realizada')],
+          ['Matrícula', getVal('amb-mat')],
+          ['Gerência', getVal('amb-gerencia')],
+          ['Data', getVal('amb-data')]
+        ];
+        const ws = XLSX.utils.aoa_to_sheet(rows);
+        ws['!cols'] = [{ wch: 40 }, { wch: 20 }, { wch: 8 }, { wch: 40 }];
+        XLSX.utils.book_append_sheet(wb, ws, 'Ambiental');
+      }
+
+      // ════════════════════════════════════════════════════════
+      // INIT
+      // ════════════════════════════════════════════════════════
+      renderInfraTable();
+      renderAlmoxTable();
+      renderTableQty(motoFerramentas, 'tb-moto-ferramentas');
+      renderTableQty(motoEpis, 'tb-moto-epis');
+      renderChecklist(motoChecklistVeiculo, 'checklist-moto-veiculo');
+      renderTableQty(es2Ferramentas, 'tb-es2-ferramentas');
+      renderTableQty(es2Epis, 'tb-es2-epis');
+      renderTableQty(es2Kit, 'tb-es2-kit');
+      renderChecklist(es2ChecklistVeiculo, 'checklist-es2-veiculo');
+      renderChecklist(es2ChecklistEscada, 'checklist-es2-escada');
+
+      // ════════════════════════════════════════════════════════
+      // PHOTO UPLOAD HANDLER
+      // ════════════════════════════════════════════════════════
+      function compressImage(dataUrl, maxWidth, quality) {
+        return new Promise(resolve => {
+          const img = new Image();
+          img.onload = function () {
+            const canvas = document.createElement('canvas');
+            let w = img.width, h = img.height;
+            if (w > maxWidth) { h = Math.round(h * maxWidth / w); w = maxWidth; }
+            canvas.width = w; canvas.height = h;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, w, h);
+            resolve(canvas.toDataURL('image/jpeg', quality));
+          };
+          img.src = dataUrl;
+        });
+      }
+
+      function addPhotoToPreview(container, dataUrl) {
+        const item = document.createElement('div');
+        item.className = 'image-preview-item';
+        const img = document.createElement('img');
+        img.src = dataUrl;
+        const btn = document.createElement('button');
+        btn.className = 'remove-photo';
+        btn.innerHTML = '✕';
+        btn.onclick = () => { item.remove(); scheduleAutoSave(); };
+        item.appendChild(img);
+        item.appendChild(btn);
+        container.appendChild(item);
+      }
+
+      async function handlePhotoUpload(event, containerId) {
+        const container = document.getElementById(containerId);
+        const files = Array.from(event.target.files);
+        for (const file of files) {
+          const dataUrl = await new Promise(resolve => {
+            const reader = new FileReader();
+            reader.onload = e => resolve(e.target.result);
+            reader.readAsDataURL(file);
+          });
+          const compressed = await compressImage(dataUrl, 800, 0.6);
+          addPhotoToPreview(container, compressed);
+        }
+        event.target.value = '';
+        scheduleAutoSave();
+      }
+
+      // ════════════════════════════════════════════════════════
+      // FIREBASE INIT
+      // ════════════════════════════════════════════════════════
+      const firebaseConfig = {
+        apiKey: "AIzaSyCRwxQmL2ViAXvw7bBKMZLY9e1SUvsDiGY",
+        authDomain: "formularios-ate-cemig.firebaseapp.com",
+        projectId: "formularios-ate-cemig",
+        storageBucket: "formularios-ate-cemig.firebasestorage.app",
+        messagingSenderId: "586943089340",
+        appId: "1:586943089340:web:2c3f453540a4e7d2615eb9"
+      };
+      firebase.initializeApp(firebaseConfig);
+      const db = firebase.firestore();
+
+      // ════════════════════════════════════════════════════════
+      // SESSION MANAGEMENT
+      // ════════════════════════════════════════════════════════
+      let currentSessionId = null;
+      let currentFormType = null;
+      let autoSaveTimer = null;
+
+      const FORM_LABELS = {
+        infra: 'Infraestrutura Administrativa',
+        almox: 'Almoxarifado',
+        moto: 'Equipes de Motociclistas',
+        es2: 'Multifuncional ES2',
+        amb: 'Parte Ambiental'
+      };
+
+      function generateId() {
+        const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+        let id = '';
+        for (let i = 0; i < 8; i++) {
+          if (i === 4) id += '-';
+          id += chars[Math.floor(Math.random() * chars.length)];
+        }
+        return id;
+      }
+
+      function setStatus(msg, cls = '') {
+        document.querySelectorAll('.session-status').forEach(el => {
+          el.textContent = msg;
+          el.className = 'session-status ' + cls;
+        });
+      }
+
+      function updateSessionDisplay() {
+        document.querySelectorAll('.session-id').forEach(el => {
+          el.textContent = currentSessionId || 'Aguardando...';
+        });
+      }
+
+      function copySessionId() {
+        if (!currentSessionId) return;
+        navigator.clipboard.writeText(currentSessionId)
+          .then(() => { setStatus('ID copiado!', 'saved'); setTimeout(() => setStatus('Salvo ✓', 'saved'), 1500); })
+          .catch(() => { prompt('Copie o ID abaixo:', currentSessionId); });
+      }
+
+      // ── Collect all form field values ─────────────────────────────────────────
+      function collectFormData(formId) {
+        const container = document.getElementById('form-' + formId);
+        const data = {};
+
+        // text/date/number inputs and textareas with data-field
+        container.querySelectorAll('input[data-field], textarea[data-field]').forEach(el => {
+          data[el.dataset.field] = el.value;
+        });
+
+        // radio buttons (named)
+        const radioNames = new Set();
+        container.querySelectorAll('input[type="radio"]').forEach(el => {
+          if (el.name) radioNames.add(el.name);
+        });
+        radioNames.forEach(name => {
+          const checked = container.querySelector(`input[name="${name}"]:checked`);
+          data['radio__' + name] = checked ? checked.value : '';
+        });
+
+        // checkboxes (by id)
+        container.querySelectorAll('input[type="checkbox"][id]').forEach(el => {
+          data['check__' + el.id] = el.checked;
+        });
+
+        // infra NA/C/NC radios + NC comments
+        container.querySelectorAll('input[type="radio"][name^="infra-item-"]').forEach(el => {
+          if (el.checked) data['radio__' + el.name] = el.value;
+        });
+        container.querySelectorAll('.nc-comment textarea[id]').forEach(el => {
+          data['nc__' + el.id] = el.value;
+        });
+
+        // qty-input fields (ferramentas, EPIs, Kit)
+        container.querySelectorAll('.qty-input[data-item]').forEach(el => {
+          data['qty__' + el.dataset.item] = el.value;
+        });
+
+        // req-input fields (Qtd Exigida editável)
+        container.querySelectorAll('.req-input[data-req]').forEach(el => {
+          data['req__' + el.dataset.req] = el.value;
+        });
+
+        // laudo text inputs (Nº controle, Validade)
+        container.querySelectorAll('input[data-laudo]').forEach(el => {
+          data['laudo__' + el.dataset.laudo] = el.value;
+        });
+
+        // fabricante checkboxes
+        container.querySelectorAll('input[data-fab]').forEach(el => {
+          data['fab__' + el.dataset.fab] = el.checked;
+        });
+
+        // laboratório checkboxes
+        container.querySelectorAll('input[data-lab]').forEach(el => {
+          data['lab__' + el.dataset.lab] = el.checked;
+        });
+
+        // fabricante "Outro" text fields
+        container.querySelectorAll('input[data-fab-outro]').forEach(el => {
+          if (el.value) data['faboutro__' + el.dataset.fabOutro] = el.value;
+        });
+
+        // laboratório "Outro" text fields
+        container.querySelectorAll('input[data-lab-outro]').forEach(el => {
+          if (el.value) data['laboutro__' + el.dataset.labOutro] = el.value;
+        });
+
+        // photos (compressed base64)
+        container.querySelectorAll('.image-preview-container').forEach(pc => {
+          const imgs = pc.querySelectorAll('img');
+          const photos = Array.from(imgs).map(img => img.src);
+          if (photos.length > 0) data['photos__' + pc.id] = photos;
+        });
+
+        return data;
+      }
+
+      // ── Restore form data ─────────────────────────────────────────────────────
+      function restoreFormData(formId, data) {
+        const container = document.getElementById('form-' + formId);
+
+        Object.entries(data).forEach(([key, value]) => {
+          if (key.startsWith('radio__')) {
+            const name = key.replace('radio__', '');
+            const el = container.querySelector(`input[name="${name}"][value="${value}"]`);
+            if (el) {
+              el.checked = true;
+              el.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+          } else if (key.startsWith('check__')) {
+            const id = key.replace('check__', '');
+            const el = document.getElementById(id);
+            if (el) el.checked = value;
+          } else if (key.startsWith('nc__')) {
+            const id = key.replace('nc__', '');
+            const el = document.getElementById(id);
+            if (el) { el.value = value; if (value) el.closest('.nc-comment').classList.add('visible'); }
+          } else if (key.startsWith('qty__')) {
+            const item = key.replace('qty__', '');
+            const el = container.querySelector(`.qty-input[data-item="${item}"]`);
+            if (el) el.value = value;
+          } else if (key.startsWith('req__')) {
+            const item = key.replace('req__', '');
+            const el = container.querySelector(`.req-input[data-req="${item}"]`);
+            if (el) el.value = value;
+          } else if (key.startsWith('laudo__')) {
+            const laudoKey = key.replace('laudo__', '');
+            const el = container.querySelector(`input[data-laudo="${laudoKey}"]`);
+            if (el) el.value = value;
+          } else if (key.startsWith('fab__')) {
+            const fabKey = key.replace('fab__', '');
+            const el = container.querySelector(`input[data-fab="${fabKey}"]`);
+            if (el) el.checked = value;
+          } else if (key.startsWith('lab__')) {
+            const labKey = key.replace('lab__', '');
+            const el = container.querySelector(`input[data-lab="${labKey}"]`);
+            if (el) el.checked = value;
+          } else if (key.startsWith('photos__')) {
+            const containerId = key.replace('photos__', '');
+            const pc = document.getElementById(containerId);
+            if (pc && Array.isArray(value)) {
+              value.forEach(photoUrl => addPhotoToPreview(pc, photoUrl));
+            }
+          } else if (key.startsWith('faboutro__')) {
+            const itemKey = key.replace('faboutro__', '');
+            const el = container.querySelector(`input[data-fab-outro="${itemKey}"]`);
+            if (el) { el.value = value; el.classList.remove('hidden'); }
+          } else if (key.startsWith('laboutro__')) {
+            const itemKey = key.replace('laboutro__', '');
+            const el = container.querySelector(`input[data-lab-outro="${itemKey}"]`);
+            if (el) { el.value = value; el.classList.remove('hidden'); }
+          } else {
+            const el = container.querySelector(`[data-field="${key}"]`);
+            if (el) el.value = value;
+          }
+        });
+      }
+
+      // ── Auto-save ─────────────────────────────────────────────────────────────
+      async function initSessionIfNeeded() {
+        if (currentSessionId || !currentFormType) return;
+        currentSessionId = generateId();
+        updateSessionDisplay();
+        try {
+          await db.collection('formularios-ate').doc(currentSessionId).set({
+            formType: currentFormType,
+            formLabel: FORM_LABELS[currentFormType],
+            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            status: 'em_andamento',
+            data: {}
+          });
+          saveToLocalHistory(currentSessionId, currentFormType);
+        } catch (e) {
+          console.error('Erro ao criar sessão:', e);
+        }
+      }
+
+      function scheduleAutoSave() {
+        if (!currentFormType || isFormLocked) return;
+        clearTimeout(autoSaveTimer);
+        setStatus('Salvando...', 'saving');
+        autoSaveTimer = setTimeout(async () => {
+          await initSessionIfNeeded();
+          await saveSession();
+        }, 1500);
+      }
+
+      async function saveSession() {
+        if (!currentSessionId || !currentFormType) return;
+        try {
+          const formData = collectFormData(currentFormType);
+          // Verificar tamanho estimado (aviso se > 900KB)
+          const dataStr = JSON.stringify(formData);
+          const sizeKB = Math.round(dataStr.length / 1024);
+          if (sizeKB > 900) {
+            console.warn(`Aviso: documento com ~${sizeKB}KB. Limite do Firestore é 1MB.`);
+          }
+          await db.collection('formularios-ate').doc(currentSessionId).set({
+            formType: currentFormType,
+            formLabel: FORM_LABELS[currentFormType],
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            status: 'em_andamento',
+            data: formData
+          }, { merge: true });
+          setStatus('Salvo ✓', 'saved');
+          saveToLocalHistory(currentSessionId, currentFormType);
+        } catch (e) {
+          setStatus('Erro ao salvar', '');
+          console.error(e);
+        }
+      }
+
+      async function saveManual(btn) {
+        if (!currentFormType) {
+          alert('Nenhum formulário ativo para salvar.');
+          return;
+        }
+        if (!validateFormNC(currentFormType)) return;
+        clearTimeout(autoSaveTimer);
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '⏳ Salvando...';
+        btn.disabled = true;
+        try {
+          await initSessionIfNeeded();
+          await saveSession();
+          btn.innerHTML = '✅ Salvo!';
+          setTimeout(() => { btn.innerHTML = originalText; btn.disabled = false; }, 2000);
+        } catch (e) {
+          btn.innerHTML = '❌ Erro!';
+          setTimeout(() => { btn.innerHTML = originalText; btn.disabled = false; }, 2000);
+        }
+      }
+
+      // ── Bloquear formulário concluído ──────────────────────────────────────────
+      let isFormLocked = false;
+
+      function lockForm(formId) {
+        isFormLocked = true;
+        const container = document.getElementById('form-' + formId);
+        // Desabilitar todos os campos
+        container.querySelectorAll('input, textarea, select').forEach(el => {
+          el.disabled = true;
+          el.style.opacity = '0.7';
+          el.style.cursor = 'not-allowed';
+        });
+        // Desabilitar uploads de fotos
+        container.querySelectorAll('.photo-upload-label').forEach(el => {
+          el.style.display = 'none';
+        });
+        // Desabilitar botões de remover foto
+        container.querySelectorAll('.remove-photo').forEach(el => {
+          el.style.display = 'none';
+        });
+        // Ocultar botões Salvar, Finalizar e Limpar; manter Voltar e Exportar
+        container.querySelectorAll('.btn-save, .btn-finalizar, .btn-reset').forEach(el => {
+          el.style.display = 'none';
+        });
+        // Inserir banner de formulário concluído
+        const btnBar = container.querySelector('.btn-bar');
+        if (btnBar && !container.querySelector('.locked-banner')) {
+          const banner = document.createElement('div');
+          banner.className = 'locked-banner';
+          banner.innerHTML = '🔒 Formulário concluído — somente leitura';
+          banner.style.cssText = 'width:100%;text-align:center;padding:10px;background:#e8f5e9;color:#2e7d32;font-weight:700;font-size:13px;border-radius:6px;border:1px solid #a5d6a7;margin-bottom:8px;';
+          container.querySelector('.form-header').insertAdjacentElement('afterend', banner);
+        }
+        // Parar auto-save
+        clearTimeout(autoSaveTimer);
+      }
+
+      function unlockForm(formId) {
+        isFormLocked = false;
+        const container = document.getElementById('form-' + formId);
+        container.querySelectorAll('input, textarea, select').forEach(el => {
+          el.disabled = false;
+          el.style.opacity = '';
+          el.style.cursor = '';
+        });
+        container.querySelectorAll('.photo-upload-label').forEach(el => {
+          el.style.display = '';
+        });
+        container.querySelectorAll('.remove-photo').forEach(el => {
+          el.style.display = '';
+        });
+        container.querySelectorAll('.btn-save, .btn-finalizar, .btn-reset').forEach(el => {
+          el.style.display = '';
+        });
+        const banner = container.querySelector('.locked-banner');
+        if (banner) banner.remove();
+      }
+
+      // ── Finalizar formulário ──────────────────────────────────────────────────
+      async function finalizarFormulario(btn) {
+        if (!currentFormType) {
+          alert('Nenhum formulário ativo para finalizar.');
+          return;
+        }
+        if (!validateFormNC(currentFormType)) return;
+        const confirma = confirm('Deseja realmente FINALIZAR este formulário?\n\nApós finalizado, o status será alterado para "Concluído" e os campos ficarão bloqueados para edição.');
+        if (!confirma) return;
+
+        clearTimeout(autoSaveTimer);
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '⏳ Finalizando...';
+        btn.disabled = true;
+
+        try {
+          await initSessionIfNeeded();
+          const formData = collectFormData(currentFormType);
+          const dataStr = JSON.stringify(formData);
+          const sizeKB = Math.round(dataStr.length / 1024);
+          if (sizeKB > 900) {
+            console.warn(`Aviso: documento com ~${sizeKB}KB. Limite do Firestore é 1MB.`);
+          }
+          await db.collection('formularios-ate').doc(currentSessionId).set({
+            formType: currentFormType,
+            formLabel: FORM_LABELS[currentFormType],
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            finalizadoEm: firebase.firestore.FieldValue.serverTimestamp(),
+            status: 'concluido',
+            data: formData
+          }, { merge: true });
+          setStatus('✔ Concluído', 'concluido');
+          saveToLocalHistory(currentSessionId, currentFormType, 'concluido');
+          lockForm(currentFormType);
+        } catch (e) {
+          console.error('Erro ao finalizar:', e);
+          btn.innerHTML = '❌ Erro!';
+          setTimeout(() => { btn.innerHTML = originalText; btn.disabled = false; }, 2000);
+        }
+      }
+
+      // ── Local history (last 10 sessions) ─────────────────────────────────────
+      function saveToLocalHistory(sessionId, formType, status) {
+        let history = JSON.parse(localStorage.getItem('ate-history') || '[]');
+        history = history.filter(h => h.id !== sessionId);
+        history.unshift({
+          id: sessionId,
+          formType,
+          formLabel: FORM_LABELS[formType],
+          status: status || 'em_andamento',
+          savedAt: new Date().toISOString()
+        });
+        if (history.length > 10) history = history.slice(0, 10);
+        localStorage.setItem('ate-history', JSON.stringify(history));
+        renderHistory();
+      }
+
+      function renderHistory() {
+        const list = document.getElementById('history-list');
+        if (!list) return;
+        const history = JSON.parse(localStorage.getItem('ate-history') || '[]');
+        if (history.length === 0) {
+          list.innerHTML = '<div class="history-empty">Nenhuma sessão salva ainda.</div>';
+          return;
+        }
+        list.innerHTML = history.map(h => {
+          const date = new Date(h.savedAt).toLocaleString('pt-BR');
+          const statusClass = h.status === 'concluido' ? 'concluido' : 'em-andamento';
+          const statusLabel = h.status === 'concluido' ? '✔ Concluído' : '✏ Em andamento';
+          return `<div class="history-item">
+          <div class="hi-id">${h.id}</div>
+          <div class="hi-center">
+            <span class="hi-status ${statusClass}">${statusLabel}</span>
+            <div class="hi-meta">${h.formLabel} &nbsp;·&nbsp; ${date}</div>
+          </div>
+          <div class="hi-btns">
+            <button class="resume" onclick="loadSession('${h.id}')">▶ Retomar</button>
+          </div>
+        </div>`;
+        }).join('');
+      }
+
+      // ── Resume session ────────────────────────────────────────────────────────
+      function resumeSession() {
+        const input = document.getElementById('resume-input');
+        const id = input ? input.value.trim().toUpperCase() : '';
+        if (!id) { alert('Digite um ID de sessão válido.'); return; }
+        loadSession(id);
+      }
+
+      async function loadSession(sessionId) {
+        try {
+          setStatus('Carregando...', 'saving');
+          const doc = await db.collection('formularios-ate').doc(sessionId).get();
+          if (!doc.exists) {
+            alert('Sessão não encontrada na base de dados. Ela pode ter sido excluída.');
+            setStatus('Sessão inexistente', '');
+            let history = JSON.parse(localStorage.getItem('ate-history') || '[]');
+            history = history.filter(h => h.id !== sessionId);
+            localStorage.setItem('ate-history', JSON.stringify(history));
+            renderHistory();
+            return;
+          }
+          const session = doc.data();
+          currentSessionId = sessionId;
+          currentFormType = session.formType;
+          // Show the form first (tables need to render)
+          showForm(session.formType);
+          updateSessionDisplay();
+          // Restore after a tick (so rendered tables are in DOM)
+          setTimeout(() => {
+            restoreFormData(session.formType, session.data || {});
+            if (session.status === 'concluido') {
+              setStatus('✔ Concluído', 'concluido');
+              lockForm(session.formType);
+            } else {
+              setStatus('Sessão carregada ✓', 'saved');
+              attachAutoSave(session.formType);
+            }
+          }, 300);
+        } catch (e) {
+          setStatus('Erro ao carregar', '');
+          console.error(e);
+          alert('Erro ao carregar a sessão. Tente novamente.');
+        }
+      }
+
+      // ── Attach auto-save listeners to a form ─────────────────────────────────
+      function attachAutoSave(formId) {
+        const container = document.getElementById('form-' + formId);
+        container.querySelectorAll('input, textarea, select').forEach(el => {
+          el.addEventListener('change', scheduleAutoSave);
+          if (el.tagName === 'TEXTAREA' || el.type === 'text' || el.type === 'date' || el.type === 'number') {
+            el.addEventListener('input', scheduleAutoSave);
+          }
+        });
+      }
+
+      // ── Override showForm to init session ─────────────────────────────────────
+      const _originalShowForm = showForm;
+      showForm = function (formId) {
+        _originalShowForm(formId);
+        // Desbloquear ao abrir novo formulário
+        if (isFormLocked) unlockForm(formId);
+        // Only set up form type if not loading an existing session
+        if (!currentSessionId || currentFormType !== formId) {
+          currentSessionId = null;
+          currentFormType = formId;
+          updateSessionDisplay();
+          setStatus('Sessão será criada ao inserir dados', '');
+        }
+        attachAutoSave(formId);
+      };
+
+      // ── Init history on load ──────────────────────────────────────────────────
+      window.addEventListener('DOMContentLoaded', renderHistory);
+    </script>
+
+    <!-- EXPORT OVERLAY -->
+    <div id="export-overlay" class="export-overlay">
+      <div class="export-overlay-box">
+        <div class="export-spinner"></div>
+        <h3>Exportando...</h3>
+        <p id="export-overlay-text">Preparando exportação...</p>
+        <p style="margin-top:12px;font-size:11px;color:#999;">Não feche esta página até concluir.</p>
+      </div>
+    </div>
+
+</body>
+
+</html>
