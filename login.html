@@ -1,1 +1,291 @@
 
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Acesso - Formulários ATE</title>
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;700&display=swap"
+    rel="stylesheet">
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+  <style>
+    :root {
+      --cemig-blue: #00a651;
+      --border: #b0bec5;
+      --bg: #f4f6f9;
+      --text: #1a2332;
+      --text-light: #546e7a;
+      --warn: #c62828;
+      --ok: #2e7d32;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'IBM Plex Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+    }
+
+    .login-container {
+      width: 100%;
+      max-width: 400px;
+      background: white;
+      padding: 32px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .cemig-logo {
+      margin: 0 auto 16px;
+      width: 70px;
+      height: 70px;
+      font-size: 22px;
+      background: var(--cemig-blue);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      font-family: 'IBM Plex Mono', monospace;
+      font-weight: 700;
+      letter-spacing: -1px;
+    }
+
+    .login-container h2 {
+      text-align: center;
+      color: var(--cemig-blue);
+      margin-bottom: 8px;
+      font-weight: 700;
+      font-size: 20px;
+    }
+
+    .login-container p.sub {
+      text-align: center;
+      font-size: 13px;
+      color: var(--text-light);
+      margin-bottom: 24px;
+    }
+
+    .login-input {
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 16px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-family: inherit;
+      font-size: 14px;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 12px;
+      font-size: 14px;
+      font-weight: 600;
+      border-radius: 4px;
+      cursor: pointer;
+      font-family: inherit;
+      transition: opacity 0.2s;
+      border: none;
+    }
+
+    .btn-primary {
+      background: var(--cemig-blue);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      opacity: 0.9;
+    }
+
+    .btn:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+    }
+
+    .auth-toggle {
+      color: var(--cemig-blue);
+      cursor: pointer;
+      text-decoration: underline;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .alert {
+      font-size: 12px;
+      margin-bottom: 16px;
+      text-align: center;
+      display: none;
+      padding: 8px;
+      border-radius: 4px;
+    }
+
+    .alert-err {
+      color: var(--warn);
+      background: #ffebee;
+    }
+
+    .alert-ok {
+      color: var(--ok);
+      background: #e8f5e9;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="login-container">
+    <div class="cemig-logo">CEMIG</div>
+    <h2 id="auth-title">ATE - Formulários Online</h2>
+    <p class="sub" id="auth-sub">Entre com seu e-mail e senha</p>
+
+    <div id="auth-error" class="alert alert-err"></div>
+    <div id="auth-success" class="alert alert-ok"></div>
+
+    <!-- LOGIN -->
+    <div id="mode-login">
+      <input type="email" id="email" class="login-input" placeholder="E-mail" autocomplete="username">
+      <input type="password" id="pwd" class="login-input" placeholder="Senha"
+        onkeypress="if(event.key === 'Enter') handleLogin()" autocomplete="current-password">
+      <button class="btn btn-primary" onclick="handleLogin()" id="btn-login">Entrar</button>
+
+      <div style="display: flex; justify-content: flex-end; margin-top: 16px;">
+        <a class="auth-toggle" onclick="setMode('request')">Solicitar Acesso</a>
+      </div>
+    </div>
+
+
+    <!-- SOLICITAR ACESSO -->
+    <div id="mode-request" style="display:none;">
+      <p style="font-size: 13px; color: var(--text-light); margin-bottom: 16px;">Sua solicitação será analisada pelo
+        administrador.</p>
+      <input type="text" id="req-nome" class="login-input" placeholder="Nome completo">
+      <input type="text" id="req-matricula" class="login-input" placeholder="Matrícula">
+      <input type="email" id="req-email" class="login-input" placeholder="E-mail profissional">
+      <button class="btn btn-primary" onclick="handleRequest()" id="btn-request">Enviar Solicitação</button>
+      <div style="text-align:center; margin-top: 16px;"><a class="auth-toggle" onclick="setMode('login')">← Voltar</a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // FIREBASE INIT
+    const firebaseConfig = {
+      apiKey: "AIzaSyCRwxQmL2ViAXvw7bBKMZLY9e1SUvsDiGY",
+      authDomain: "formularios-ate-cemig.firebaseapp.com",
+      projectId: "formularios-ate-cemig",
+      storageBucket: "formularios-ate-cemig.firebasestorage.app",
+      messagingSenderId: "586943089340",
+      appId: "1:586943089340:web:2c3f453540a4e7d2615eb9"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    // REDIRECIONAR SE JÁ LOGADO
+    auth.onAuthStateChanged(user => {
+      if (user) {
+        // Obter de onde veio, se aplicável, ou ir para home
+        const params = new URLSearchParams(window.location.search);
+        const redirect = params.get('redirect');
+        if (redirect === 'admin') {
+          window.location.href = 'admin.html';
+        } else {
+          window.location.href = 'index.html';
+        }
+      }
+    });
+
+    // UI LOGIC
+    function setMode(mode) {
+      document.getElementById('mode-login').style.display = mode === 'login' ? 'block' : 'none';
+      document.getElementById('mode-request').style.display = mode === 'request' ? 'block' : 'none';
+
+      const titles = { login: 'Acesso ao Sistema', request: 'Solicitar Acesso' };
+      const subs = { login: 'Entre com seu e-mail e senha', request: '' };
+      document.getElementById('auth-title').innerText = titles[mode];
+      document.getElementById('auth-sub').innerText = subs[mode];
+
+      hideAlerts();
+    }
+
+    function showErr(msg) {
+      const el = document.getElementById('auth-error'); el.innerText = msg; el.style.display = 'block';
+      document.getElementById('auth-success').style.display = 'none';
+    }
+    function showOk(msg) {
+      const el = document.getElementById('auth-success'); el.innerText = msg; el.style.display = 'block';
+      document.getElementById('auth-error').style.display = 'none';
+    }
+    function hideAlerts() {
+      document.getElementById('auth-error').style.display = 'none';
+      document.getElementById('auth-success').style.display = 'none';
+    }
+
+    // ACTIONS
+    async function handleLogin() {
+      const email = document.getElementById('email').value.trim();
+      const pwd = document.getElementById('pwd').value;
+      if (!email || !pwd) { showErr("Preencha e-mail e senha."); return; }
+
+      const btn = document.getElementById('btn-login');
+      btn.innerText = "Aguarde..."; btn.disabled = true;
+
+      try {
+        await auth.signInWithEmailAndPassword(email, pwd);
+        // Sucesso = onAuthStateChanged redirecionará
+      } catch (e) {
+        if (e.code === 'auth/invalid-credential') showErr("E-mail ou senha incorretos.");
+        else if (e.code === 'auth/too-many-requests') showErr("Conta bloqueada temporariamente. Tente mais tarde.");
+        else showErr("Erro no login: " + e.message);
+        btn.innerText = "Entrar"; btn.disabled = false;
+      }
+    }
+
+
+    async function handleRequest() {
+      const nome = document.getElementById('req-nome').value.trim();
+      const matricula = document.getElementById('req-matricula').value.trim();
+      const email = document.getElementById('req-email').value.trim();
+
+      if (!nome || !email) { showErr("Nome e E-mail são obrigatórios."); return; }
+
+      const btn = document.getElementById('btn-request');
+      btn.innerText = "Enviando..."; btn.disabled = true;
+
+      try {
+        await db.collection('solicitacoes-acesso').add({
+          nome, matricula, email,
+          status: 'pendente',
+          solicitadoEm: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        showOk("Solicitação enviada ao administrador!");
+        document.getElementById('req-nome').value = '';
+        document.getElementById('req-matricula').value = '';
+        document.getElementById('req-email').value = '';
+      } catch (e) {
+        showErr("Erro ao enviar: " + e.message);
+      }
+      btn.innerText = "Enviar Solicitação"; btn.disabled = false;
+    }
+  </script>
+</body>
+
+</html>
