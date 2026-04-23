@@ -1104,14 +1104,67 @@
         display: none !important;
       }
     }
-  
-    .login-container { max-width: 400px; margin: 100px auto; background: white; padding: 32px; border-radius: 8px; border: 1px solid var(--border); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-    .login-container h2 { color: var(--cemig-blue); margin-bottom: 8px; font-weight:700; font-size: 20px;}
-    .login-input { width: 100%; padding: 12px; margin-bottom: 16px; border: 1px solid var(--border); border-radius: 4px; font-family: inherit; font-size: 14px;}
-    .auth-toggle { color: var(--cemig-blue); cursor: pointer; text-decoration: underline; font-size: 12px; text-align: center; display: block; margin-top: 16px; font-weight:600;}
-    .user-badge { background: #e3eaf5; color: var(--text); padding: 6px 12px; border-radius: 16px; font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; gap: 12px; }
-    .logout-btn { background: none; border: none; color: var(--warn); cursor: pointer; font-size: 11px; font-weight: 600; text-decoration: underline; }
-</style>
+
+    .login-container {
+      max-width: 400px;
+      margin: 100px auto;
+      background: white;
+      padding: 32px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .login-container h2 {
+      color: var(--cemig-blue);
+      margin-bottom: 8px;
+      font-weight: 700;
+      font-size: 20px;
+    }
+
+    .login-input {
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 16px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-family: inherit;
+      font-size: 14px;
+    }
+
+    .auth-toggle {
+      color: var(--cemig-blue);
+      cursor: pointer;
+      text-decoration: underline;
+      font-size: 12px;
+      text-align: center;
+      display: block;
+      margin-top: 16px;
+      font-weight: 600;
+    }
+
+    .user-badge {
+      background: #e3eaf5;
+      color: var(--text);
+      padding: 6px 12px;
+      border-radius: 16px;
+      font-size: 11px;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logout-btn {
+      background: none;
+      border: none;
+      color: var(--warn);
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: 600;
+      text-decoration: underline;
+    }
+  </style>
 </head>
 
 <body>
@@ -1177,10 +1230,13 @@
           <span style="font-size: 12px; color: var(--text-light);">Logado como: </span>
           <span id="user-email-display" style="font-size: 12px; font-weight: 600; color: var(--text);"></span>
           <span style="margin: 0 8px;">|</span>
-          <a href="#" onclick="logout(); return false;" style="font-size: 12px; color: var(--warn); font-weight: 600;">Sair</a>
+          <a href="#" onclick="logout(); return false;"
+            style="font-size: 12px; color: var(--warn); font-weight: 600;">Sair</a>
         </div>
         <div id="admin-area-btn" style="display:none; margin-top: 12px;">
-          <a href="admin.html" style="display: inline-block; padding: 10px 24px; background: #1a2332; color: white; border-radius: 6px; text-decoration: none; font-size: 13px; font-weight: 600;">🔐 Área Administrativa</a>
+          <a href="admin.html"
+            style="display: inline-block; padding: 10px 24px; background: #1a2332; color: white; border-radius: 6px; text-decoration: none; font-size: 13px; font-weight: 600;">🔐
+            Área Administrativa</a>
         </div>
       </div>
     </div>
@@ -1204,6 +1260,7 @@
         <div>
           <h1>FORMULÁRIO PARA AVALIAÇÃO TÉCNICA EM EMPREITEIRA – ATE</h1>
           <h2>INFRAESTRUTURA ADMINISTRATIVA</h2>
+        <div class="print-session-info" style="margin-left: auto; text-align: right; font-size: 11px; font-family: monospace; opacity: 0.9; line-height: 1.4;"></div>
         </div>
       </div>
 
@@ -1356,6 +1413,7 @@
         <div>
           <h1>FORMULÁRIO PARA AVALIAÇÃO TÉCNICA EM EMPREITEIRA – ATE</h1>
           <h2>ALMOXARIFADO</h2>
+        <div class="print-session-info" style="margin-left: auto; text-align: right; font-size: 11px; font-family: monospace; opacity: 0.9; line-height: 1.4;"></div>
         </div>
       </div>
 
@@ -1528,6 +1586,7 @@
           <h1>FORMULÁRIO PARA AVALIAÇÃO TÉCNICA EM EMPREITEIRA – ATE</h1>
           <h2>EQUIPES DE MOTOCICLISTAS</h2>
           <div class="sub">Estrutura de pessoal MO1: 1 Instalador motociclista</div>
+        <div class="print-session-info" style="margin-left: auto; text-align: right; font-size: 11px; font-family: monospace; opacity: 0.9; line-height: 1.4;"></div>
         </div>
       </div>
 
@@ -1746,6 +1805,7 @@
           <h1>FORMULÁRIO PARA AVALIAÇÃO TÉCNICA EM EMPREITEIRA – ATE</h1>
           <h2>EQUIPES DE MULTIFUNCIONAL</h2>
           <div class="sub">Estrutura de pessoal ES2: Equipe de serviços – 2 componentes (2 instaladores)</div>
+        <div class="print-session-info" style="margin-left: auto; text-align: right; font-size: 11px; font-family: monospace; opacity: 0.9; line-height: 1.4;"></div>
         </div>
       </div>
 
@@ -2020,6 +2080,7 @@
           <h1>FORMULÁRIO PARA AVALIAÇÃO TÉCNICA EM EMPREITEIRA – ATE</h1>
           <h2>EQUIPES DE MULTIFUNCIONAL</h2>
           <div class="sub">Estrutura de pessoal EL2: Equipe de serviços – 2 componentes (2 instaladores)</div>
+        <div class="print-session-info" style="margin-left: auto; text-align: right; font-size: 11px; font-family: monospace; opacity: 0.9; line-height: 1.4;"></div>
         </div>
       </div>
 
@@ -2294,6 +2355,7 @@
           <h1>FORMULÁRIO PARA AVALIAÇÃO TÉCNICA EM EMPREITEIRA – ATE</h1>
           <h2>PARTE AMBIENTAL</h2>
           <div class="sub">Check list orientativo para avaliação ambiental em base operativa de empreiteiras</div>
+        <div class="print-session-info" style="margin-left: auto; text-align: right; font-size: 11px; font-family: monospace; opacity: 0.9; line-height: 1.4;"></div>
         </div>
       </div>
 
@@ -2664,14 +2726,67 @@
         --cemig-blue: #00a651 !important;
       }
     }
-  
-    .login-container { max-width: 400px; margin: 100px auto; background: white; padding: 32px; border-radius: 8px; border: 1px solid var(--border); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-    .login-container h2 { color: var(--cemig-blue); margin-bottom: 8px; font-weight:700; font-size: 20px;}
-    .login-input { width: 100%; padding: 12px; margin-bottom: 16px; border: 1px solid var(--border); border-radius: 4px; font-family: inherit; font-size: 14px;}
-    .auth-toggle { color: var(--cemig-blue); cursor: pointer; text-decoration: underline; font-size: 12px; text-align: center; display: block; margin-top: 16px; font-weight:600;}
-    .user-badge { background: #e3eaf5; color: var(--text); padding: 6px 12px; border-radius: 16px; font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; gap: 12px; }
-    .logout-btn { background: none; border: none; color: var(--warn); cursor: pointer; font-size: 11px; font-weight: 600; text-decoration: underline; }
-</style>
+
+    .login-container {
+      max-width: 400px;
+      margin: 100px auto;
+      background: white;
+      padding: 32px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .login-container h2 {
+      color: var(--cemig-blue);
+      margin-bottom: 8px;
+      font-weight: 700;
+      font-size: 20px;
+    }
+
+    .login-input {
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 16px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-family: inherit;
+      font-size: 14px;
+    }
+
+    .auth-toggle {
+      color: var(--cemig-blue);
+      cursor: pointer;
+      text-decoration: underline;
+      font-size: 12px;
+      text-align: center;
+      display: block;
+      margin-top: 16px;
+      font-weight: 600;
+    }
+
+    .user-badge {
+      background: #e3eaf5;
+      color: var(--text);
+      padding: 6px 12px;
+      border-radius: 16px;
+      font-size: 11px;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logout-btn {
+      background: none;
+      border: none;
+      color: var(--warn);
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: 600;
+      text-decoration: underline;
+    }
+  </style>
 
   <script>
     // ════════════════════════════════════════════════════════
@@ -3380,6 +3495,11 @@
     }
 
     function goHome() {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.has('adminSession')) {
+        window.location.href = 'admin.html';
+        return;
+      }
       ['form-infra', 'form-moto', 'form-es2', 'form-el2', 'form-amb', 'form-almox'].forEach(id => document.getElementById(id).classList.add('hidden'));
       document.getElementById('home-screen').classList.remove('hidden');
       currentForm = null;
@@ -3944,7 +4064,7 @@
     // ── Auth Logic ────────────────────────────────────────────────────────────
     const auth = firebase.auth();
     let currentUser = null;
-    const ADMIN_EMAILS = ['e260366@cemig.com.br', 'manasses.faria@cemig.com.br'];
+    const ADMIN_EMAILS = ['e260366@cemig.com.br', 'manasses.faria@cemig.com.br', 'lucas.cunha@cemig.com.br'];
 
     function logout() {
       auth.signOut();
@@ -4010,6 +4130,15 @@
     function updateSessionDisplay() {
       document.querySelectorAll('.session-id').forEach(el => {
         el.textContent = currentSessionId || 'Aguardando...';
+      });
+      document.querySelectorAll('.print-session-info').forEach(el => {
+        if (currentSessionId) {
+          const dt = new Date().toLocaleString('pt-BR');
+          el.innerHTML = `ID: ${currentSessionId}<br>Emitido: ${dt}`;
+          el.style.display = 'block';
+        } else {
+          el.style.display = 'none';
+        }
       });
     }
 
@@ -4206,8 +4335,6 @@
           formLabel: FORM_LABELS[currentFormType],
           updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
           status: 'em_andamento',
-          userId: currentUser ? currentUser.uid : null,
-          userEmail: currentUser ? currentUser.email : null,
           data: formData
         }, { merge: true });
         setStatus('Salvo ✓', 'saved');
@@ -4326,8 +4453,6 @@
           updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
           finalizadoEm: firebase.firestore.FieldValue.serverTimestamp(),
           status: 'concluido',
-          userId: currentUser ? currentUser.uid : null,
-          userEmail: currentUser ? currentUser.email : null,
           data: formData
         }, { merge: true });
         setStatus('✔ Concluído', 'concluido');
@@ -4365,25 +4490,25 @@
         list.innerHTML = '<div class="history-empty">Faça login para ver suas sessões.</div>';
         return;
       }
-      
+
       list.innerHTML = '<div class="history-empty">Buscando na nuvem...</div>';
-      
+
       try {
         const snapshot = await db.collection('formularios-ate')
-                                 .where('userId', '==', currentUser.uid)
-                                 .get();
+          .where('userId', '==', currentUser.uid)
+          .get();
         let history = [];
         snapshot.forEach(doc => {
           history.push({ id: doc.id, ...doc.data() });
         });
-        
+
         // Client-side sort to avoid needing a composite index in Firestore
-        history.sort((a,b) => {
+        history.sort((a, b) => {
           const timeA = a.updatedAt ? (a.updatedAt.toDate ? a.updatedAt.toDate().getTime() : new Date(a.updatedAt).getTime()) : 0;
           const timeB = b.updatedAt ? (b.updatedAt.toDate ? b.updatedAt.toDate().getTime() : new Date(b.updatedAt).getTime()) : 0;
           return timeB - timeA;
         });
-        
+
         history = history.slice(0, 10); // Keep top 10
 
         if (history.length === 0) {
