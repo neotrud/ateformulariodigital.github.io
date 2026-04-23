@@ -1213,10 +1213,10 @@
 
       <!-- RETOMAR SESSÃO -->
       <div class="history-section">
-        <div class="history-title">Retomar Preenchimento</div>
+        <div class="history-title">Buscar</div>
         <div class="history-resume">
-          <input type="text" id="resume-input" placeholder="Cole o ID da sessão aqui..." maxlength="20">
-          <button onclick="resumeSession()">Retomar</button>
+          <input type="text" id="resume-input" placeholder="Buscar por ID, Formulário, Local ou Data..." maxlength="50" onkeyup="filterHistory()">
+          <button onclick="resumeSession()" title="Retomar ID exato">Retomar ID</button>
         </div>
         <div class="history-title">Sessões Recentes</div>
         <div id="history-list" class="history-list">
@@ -1278,6 +1278,27 @@
         <div class="grid g2">
           <div class="field"><label>Agente 3</label><input type="text" data-field="infra-agente3"></div>
           <div class="field"><label>Matrícula</label><input type="text" data-field="infra-mat3"></div>
+        </div>
+      </div>
+      <!-- LOCAL E DATA -->
+      <div class="card">
+        <div class="section-title">Identificação da Base Operativa / Local</div>
+        <div class="grid g2" style="align-items:center;">
+          <div class="field">
+            <label>Local da Inspeção</label>
+            <div class="location-group" style="margin-top:6px;">
+              <label><input type="radio" name="infra-local" value="Uberlândia"
+                  onchange="toggleOutro(this,'infra-outro-local')"> Uberlândia</label>
+              <label><input type="radio" name="infra-local" value="Ituiutaba"
+                  onchange="toggleOutro(this,'infra-outro-local')"> Ituiutaba</label>
+              <label><input type="radio" name="infra-local" value="Outro" onchange="toggleOutro(this,'infra-outro-local')">
+                Outro:</label>
+              <input type="text" id="infra-outro-local" class="hidden" placeholder="Especifique..."
+                style="width:150px;border:1px solid #b0bec5;border-radius:4px;padding:4px 8px;font-size:12px;"
+                data-field="infra-outro-local">
+            </div>
+          </div>
+          <div class="field"><label>Data</label><input type="date" data-field="infra-data"></div>
         </div>
       </div>
 
@@ -1431,6 +1452,28 @@
         <div class="grid g2">
           <div class="field"><label>Agente 3</label><input type="text" data-field="almox-agente3"></div>
           <div class="field"><label>Matrícula</label><input type="text" data-field="almox-mat3"></div>
+        </div>
+      </div>
+
+      <!-- LOCAL E DATA -->
+      <div class="card">
+        <div class="section-title">Identificação da Base Operativa / Local</div>
+        <div class="grid g2" style="align-items:center;">
+          <div class="field">
+            <label>Local da Inspeção</label>
+            <div class="location-group" style="margin-top:6px;">
+              <label><input type="radio" name="almox-local" value="Uberlândia"
+                  onchange="toggleOutro(this,'almox-outro-local')"> Uberlândia</label>
+              <label><input type="radio" name="almox-local" value="Ituiutaba"
+                  onchange="toggleOutro(this,'almox-outro-local')"> Ituiutaba</label>
+              <label><input type="radio" name="almox-local" value="Outro" onchange="toggleOutro(this,'almox-outro-local')">
+                Outro:</label>
+              <input type="text" id="almox-outro-local" class="hidden" placeholder="Especifique..."
+                style="width:150px;border:1px solid #b0bec5;border-radius:4px;padding:4px 8px;font-size:12px;"
+                data-field="almox-outro-local">
+            </div>
+          </div>
+          <div class="field"><label>Data</label><input type="date" data-field="almox-data"></div>
         </div>
       </div>
 
@@ -2364,7 +2407,20 @@
         <div class="section-title">Identificação</div>
         <div class="grid g2" style="margin-bottom:12px;">
           <div class="field"><label>Contratada</label><input type="text" data-field="amb-contratada"></div>
-          <div class="field"><label>Município</label><input type="text" data-field="amb-municipio"></div>
+          <div class="field">
+            <label>Local da Inspeção</label>
+            <div class="location-group" style="margin-top:6px;">
+              <label><input type="radio" name="amb-local" value="Uberlândia"
+                  onchange="toggleOutro(this,'amb-outro-local')"> Uberlândia</label>
+              <label><input type="radio" name="amb-local" value="Ituiutaba"
+                  onchange="toggleOutro(this,'amb-outro-local')"> Ituiutaba</label>
+              <label><input type="radio" name="amb-local" value="Outro" onchange="toggleOutro(this,'amb-outro-local')">
+                Outro:</label>
+              <input type="text" id="amb-outro-local" class="hidden" placeholder="Especifique..."
+                style="width:150px;border:1px solid #b0bec5;border-radius:4px;padding:4px 8px;font-size:12px;"
+                data-field="amb-outro-local">
+            </div>
+          </div>
         </div>
         <div class="grid g2">
           <div class="field"><label>Técnico de Meio Ambiente da Contratada</label><input type="text"
@@ -3633,6 +3689,11 @@
         ['FORMULÁRIO ATE – INFRAESTRUTURA ADMINISTRATIVA'],
         ['Data de exportação', today],
         [''],
+        [''],
+        ['IDENTIFICAÇÃO DA BASE OPERATIVA'],
+        ['Local', getRadio('infra-local') || getVal('[data-field="infra-outro-local"]')],
+        ['Data', getVal('[data-field="infra-data"]')],
+        [''],
         ['ENDEREÇO'],
         ['Av./Rua', getVal('[data-field="infra-endereco"]')],
         ['Número', getVal('[data-field="infra-numero"]')],
@@ -3671,6 +3732,11 @@
       const info = [
         ['FORMULÁRIO ATE – ALMOXARIFADO'],
         ['Data de exportação', today],
+        [''],
+        [''],
+        ['IDENTIFICAÇÃO DA BASE OPERATIVA'],
+        ['Local', getRadio('almox-local') || getVal('[data-field="almox-outro-local"]')],
+        ['Data', getVal('[data-field="almox-data"]')],
         [''],
         ['ENDEREÇO'],
         ['Av./Rua', getVal('[data-field="almox-endereco"]')],
@@ -3929,7 +3995,7 @@
         [''],
         ['IDENTIFICAÇÃO'],
         ['Contratada', getVal('amb-contratada')],
-        ['Município', getVal('amb-municipio')],
+        ['Local', getRadio('amb-local') || getVal('[data-field="amb-outro-local"]')],
         ['Técnico MA', getVal('amb-tecnico')],
         ['CRT Nº', getVal('amb-crt')],
         [''],
@@ -4098,6 +4164,8 @@
     // SESSION MANAGEMENT
     // ════════════════════════════════════════════════════════
     let currentSessionId = null;
+    let allUserHistory = [];
+    let currentSessionCreatedAt = null;
     let currentFormType = null;
     let autoSaveTimer = null;
 
@@ -4133,8 +4201,8 @@
       });
       document.querySelectorAll('.print-session-info').forEach(el => {
         if (currentSessionId) {
-          const dt = new Date().toLocaleString('pt-BR');
-          el.innerHTML = `ID: ${currentSessionId}<br>Emitido: ${dt}`;
+          const dt = currentSessionCreatedAt ? currentSessionCreatedAt.toLocaleString('pt-BR') : new Date().toLocaleString('pt-BR');
+          el.innerHTML = `ID: ${currentSessionId}<br>Criado em: ${dt}`;
           el.style.display = 'block';
         } else {
           el.style.display = 'none';
@@ -4292,6 +4360,7 @@
     async function initSessionIfNeeded() {
       if (currentSessionId || !currentFormType) return;
       currentSessionId = generateId();
+      currentSessionCreatedAt = new Date();
       updateSessionDisplay();
       try {
         await db.collection('formularios-ate').doc(currentSessionId).set({
@@ -4497,48 +4566,95 @@
         const snapshot = await db.collection('formularios-ate')
           .where('userId', '==', currentUser.uid)
           .get();
-        let history = [];
+        allUserHistory = [];
         snapshot.forEach(doc => {
-          history.push({ id: doc.id, ...doc.data() });
+          allUserHistory.push({ id: doc.id, ...doc.data() });
         });
 
-        // Client-side sort to avoid needing a composite index in Firestore
-        history.sort((a, b) => {
+        allUserHistory.sort((a, b) => {
           const timeA = a.updatedAt ? (a.updatedAt.toDate ? a.updatedAt.toDate().getTime() : new Date(a.updatedAt).getTime()) : 0;
           const timeB = b.updatedAt ? (b.updatedAt.toDate ? b.updatedAt.toDate().getTime() : new Date(b.updatedAt).getTime()) : 0;
           return timeB - timeA;
         });
 
-        history = history.slice(0, 10); // Keep top 10
-
-        if (history.length === 0) {
-          list.innerHTML = '<div class="history-empty">Nenhuma sessão salva ainda.</div>';
-          return;
-        }
-
-        list.innerHTML = history.map(h => {
-          let dateStr = 'N/A';
-          if (h.updatedAt) {
-            const dateObj = h.updatedAt.toDate ? h.updatedAt.toDate() : new Date(h.updatedAt);
-            dateStr = dateObj.toLocaleString('pt-BR');
-          }
-          const statusClass = h.status === 'concluido' ? 'concluido' : 'em-andamento';
-          const statusLabel = h.status === 'concluido' ? '✔ Concluído' : '✏ Em andamento';
-          return `<div class="history-item">
-            <div class="hi-id">${h.id}</div>
-            <div class="hi-center">
-              <span class="hi-status ${statusClass}">${statusLabel}</span>
-              <div class="hi-meta">${h.formLabel || h.formType} &nbsp;·&nbsp; ${dateStr}</div>
-            </div>
-            <div class="hi-btns">
-              <button class="resume" onclick="loadSession('${h.id}')">▶ Retomar</button>
-            </div>
-          </div>`;
-        }).join('');
+        filterHistory();
       } catch (e) {
         console.error("Erro ao buscar histórico:", e);
         list.innerHTML = '<div class="history-empty" style="color:var(--warn)">Erro ao carregar histórico. Verifique sua conexão.</div>';
       }
+    }
+
+    function filterHistory() {
+      const list = document.getElementById('history-list');
+      if (!list) return;
+
+      const searchTxt = (document.getElementById('resume-input')?.value || '').toLowerCase();
+
+      let filtered = allUserHistory.map(h => {
+        let dateStr = 'N/A';
+        if (h.updatedAt) {
+          const dateObj = h.updatedAt.toDate ? h.updatedAt.toDate() : new Date(h.updatedAt);
+          dateStr = dateObj.toLocaleString('pt-BR');
+        }
+
+        let createdDateStr = 'N/A';
+        if (h.createdAt) {
+          const createdObj = h.createdAt.toDate ? h.createdAt.toDate() : new Date(h.createdAt);
+          createdDateStr = createdObj.toLocaleString('pt-BR');
+        } else {
+          createdDateStr = dateStr;
+        }
+
+        let localStr = '-';
+        if (h.data) {
+          const fType = h.formType;
+          let rLocal = h.data['radio__' + fType + '-local'];
+          if (rLocal) {
+            localStr = rLocal === 'Outro' ? (h.data[fType + '-outro-local'] || 'Outro') : rLocal;
+          } else if (fType === 'amb') {
+            localStr = h.data['amb-municipio'] || '-';
+          }
+        }
+
+        return { ...h, dateStr, createdDateStr, localStr };
+      });
+
+      if (searchTxt) {
+        filtered = filtered.filter(h => {
+          return h.id.toLowerCase().includes(searchTxt) ||
+            (h.formLabel || h.formType).toLowerCase().includes(searchTxt) ||
+            h.dateStr.toLowerCase().includes(searchTxt) ||
+            h.createdDateStr.toLowerCase().includes(searchTxt) ||
+            h.localStr.toLowerCase().includes(searchTxt) ||
+            h.status.toLowerCase().includes(searchTxt);
+        });
+      }
+
+      filtered = filtered.slice(0, 10); // Manter as 10 mais relevantes
+
+      if (filtered.length === 0) {
+        list.innerHTML = '<div class="history-empty">Nenhuma sessão encontrada.</div>';
+        return;
+      }
+
+      list.innerHTML = filtered.map(h => {
+        const statusClass = h.status === 'concluido' ? 'concluido' : 'em-andamento';
+        const statusLabel = h.status === 'concluido' ? '✔ Concluído' : '✏ Em andamento';
+        return `<div class="history-item">
+          <div class="hi-id">${h.id}</div>
+          <div class="hi-center">
+            <span class="hi-status ${statusClass}">${statusLabel}</span>
+            <div class="hi-meta" style="line-height:1.4; margin-top:4px;">
+              <strong>${h.formLabel || h.formType}</strong><br>
+              Local: ${h.localStr}<br>
+              Criado em: ${h.createdDateStr} · Atualizado: ${h.dateStr}
+            </div>
+          </div>
+          <div class="hi-btns">
+            <button class="resume" onclick="loadSession('${h.id}')">▶ Retomar</button>
+          </div>
+        </div>`;
+      }).join('');
     }
 
     // ── Resume session ────────────────────────────────────────────────────────
@@ -4565,6 +4681,7 @@
         const session = doc.data();
         currentSessionId = sessionId;
         currentFormType = session.formType;
+        currentSessionCreatedAt = session.createdAt ? (session.createdAt.toDate ? session.createdAt.toDate() : new Date(session.createdAt)) : new Date();
         // Show the form first (tables need to render)
         showForm(session.formType);
         updateSessionDisplay();
@@ -4606,6 +4723,7 @@
       // Only set up form type if not loading an existing session
       if (!currentSessionId || currentFormType !== formId) {
         currentSessionId = null;
+        currentSessionCreatedAt = null;
         currentFormType = formId;
         updateSessionDisplay();
         setStatus('Sessão será criada ao inserir dados', '');
