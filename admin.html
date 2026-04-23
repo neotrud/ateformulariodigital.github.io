@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Painel Administrativo - ATE</title>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+    :root {
+      --cemig-blue: #00a651;
+      --cemig-light: #8cc63f;
+      --accent: #e8a900;
+      --border: #b0bec5;
+      --bg: #f4f6f9;
+      --bg-section: #ffffff;
+      --text: #1a2332;
+      --text-light: #546e7a;
+      --ok: #2e7d32;
+      --warn: #c62828;
+      --row-alt: #eef2f7;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'IBM Plex Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    .page-wrapper {
+      max-width: 960px;
+      margin: 24px auto;
+      padding: 0 16px 60px;
+    }
+
+    .form-header {
+      background: var(--cemig-blue);
+      color: white;
+      padding: 20px 28px;
+      border-radius: 8px 8px 0 0;
+      display: flex;
+      align-items: center;
+      gap: 24px;
+    }
+
+    .cemig-logo {
+      width: 72px;
+      height: 72px;
+      background: white;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'IBM Plex Mono', monospace;
+      font-weight: 700;
+      font-size: 22px;
+      color: var(--cemig-blue);
+      letter-spacing: -1px;
+    }
+
+    .form-header h1 {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+    }
+
+    .form-header h2 {
+      font-size: 13px;
+      font-weight: 400;
+      opacity: 0.85;
+      margin-top: 4px;
+    }
+
+    .form-header .sub {
+      font-size: 12px;
+      opacity: 0.7;
+      margin-top: 6px;
+      font-style: italic;
+      color: #b0bec5;
+    }
+
+    .card {
+      background: var(--bg-section);
+      border: 1px solid var(--border);
+      border-top: none;
+      padding: 20px 24px;
+      border-radius: 0 0 8px 8px;
+    }
+
+    .btn-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 16px;
+    }
+
+    .btn {
+      padding: 8px 16px;
+      border-radius: 4px;
+      font-family: 'IBM Plex Sans', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: all 0.15s;
+    }
+
+    .btn-primary {
+      background: var(--cemig-blue);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: #008f45;
+    }
+
+    .btn-outline {
+      background: #f4f6f9;
+      color: var(--cemig-blue);
+      border: 1px solid var(--border);
+    }
+
+    .btn-outline:hover {
+      background: #eef2f7;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    thead tr {
+      background: var(--cemig-blue);
+      color: white;
+    }
+
+    thead th {
+      padding: 10px;
+      text-align: left;
+      font-weight: 600;
+      font-size: 11px;
+      letter-spacing: 0.5px;
+    }
+
+    tbody tr:nth-child(even) {
+      background: var(--row-alt);
+    }
+
+    tbody tr:hover {
+      background: #e3eaf5;
+    }
+
+    tbody td {
+      padding: 10px;
+      border-bottom: 1px solid #dde3ec;
+      vertical-align: middle;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .login-box {
+      max-width: 400px;
+      margin: 100px auto;
+      background: white;
+      padding: 32px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      text-align: center;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .login-box h2 {
+      margin-bottom: 16px;
+      color: var(--cemig-blue);
+    }
+
+    .login-box input {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 16px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-size: 14px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- PAINEL ADMIN -->
+  <div class="page-wrapper" id="admin-panel">
+    <div class="form-header" style="justify-content: space-between;">
+      <div style="display:flex; gap:24px; align-items:center;">
+        <div class="cemig-logo">CEMIG</div>
+        <div>
+          <h1>PAINEL ADMINISTRATIVO</h1>
+          <h2>Histórico Global de Avaliações</h2>
+          <div class="sub">Acesso restrito para consulta e exportação de formulários</div>
+        </div>
+      </div>
+      <div style="text-align:right;">
+        <div id="admin-user" style="font-size:12px; font-weight:600; margin-bottom:4px;"></div>
+        <button class="btn"
+          style="background:rgba(255,255,255,0.2); color:white; border:none; padding:4px 10px; font-size:11px;"
+          onclick="logout()">Sair da Conta</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="btn-bar">
+        <div style="display:flex; gap:10px;">
+          <button class="btn btn-outline" onclick="window.location.href='index.html'">← Voltar ao
+            Início</button>
+          <button class="btn btn-outline" onclick="loadAdminData()">🔄 Atualizar Lista</button>
+        </div>
+      </div>
+
+
+      <div style="margin-bottom:16px;">
+        <input type="text" id="admin-search" placeholder="🔍 Pesquisar por ID, Data, Formulário ou Status..."
+          onkeyup="filterAdminData()"
+          style="width:100%; padding:10px; border:1px solid var(--border); border-radius:4px; font-size:13px; font-family:'IBM Plex Sans', sans-serif;">
+      </div>
+      <div style="overflow-x:auto;">
+        <table id="admin-table">
+
+          <thead>
+            <tr>
+              <th style="cursor:pointer;" onclick="sortAdminData('date')">Data de Atualização ⇅</th>
+              <th style="cursor:pointer;" onclick="sortAdminData('id')">ID da Sessão ⇅</th>
+              <th style="cursor:pointer;" onclick="sortAdminData('form')">Formulário ⇅</th>
+              <th style="cursor:pointer;" onclick="sortAdminData('status')">Status ⇅</th>
+              <th style="cursor:pointer;" onclick="sortAdminData('user')">Usuário (Criador) ⇅</th>
+              <th style="text-align:right;">Ações</th>
+            </tr>
+          </thead>
+
+          <tbody id="admin-tbody">
+            <tr>
+              <td colspan="6" style="text-align:center; padding:20px;">Carregando dados...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- SOLICITAÇÕES DE ACESSO -->
+      <div style="margin-top: 32px; border-top: 2px solid var(--border); padding-top: 24px;">
+        <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 16px; color: var(--text);">📋 Solicitações de Acesso Pendentes</h3>
+        <div id="requests-list">
+          <p style="color: var(--text-light); font-size: 13px;">Carregando...</p>
+        </div>
+      </div>
+
+      <!-- CRIAR USUÁRIO MANUALMENTE -->
+      <div style="margin-top: 32px; border-top: 2px solid var(--border); padding-top: 24px;">
+        <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 16px; color: var(--text);">➕ Criar Novo Usuário</h3>
+        <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end;">
+          <div style="flex:1; min-width:200px;"><label style="font-size:11px; font-weight:600; color:var(--text-light);">E-mail</label><input type="email" id="new-user-email" placeholder="email@exemplo.com" style="width:100%; padding:8px; border:1px solid var(--border); border-radius:4px; font-size:13px;"></div>
+          <div style="flex:1; min-width:150px;"><label style="font-size:11px; font-weight:600; color:var(--text-light);">Senha Provisória</label><input type="text" id="new-user-pwd" placeholder="Mínimo 6 caracteres" style="width:100%; padding:8px; border:1px solid var(--border); border-radius:4px; font-size:13px;"></div>
+          <button class="btn btn-primary" onclick="createUser()" id="create-user-btn" style="height:36px;">Criar Conta</button>
+        </div>
+        <div id="create-user-msg" style="margin-top:8px; font-size:12px; display:none;"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // FIREBASE INIT
+    const firebaseConfig = {
+      apiKey: "AIzaSyCRwxQmL2ViAXvw7bBKMZLY9e1SUvsDiGY",
+      authDomain: "formularios-ate-cemig.firebaseapp.com",
+      projectId: "formularios-ate-cemig",
+      storageBucket: "formularios-ate-cemig.firebasestorage.app",
+      messagingSenderId: "586943089340",
+      appId: "1:586943089340:web:2c3f453540a4e7d2615eb9"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    const auth = firebase.auth();
+
+    const ADMIN_EMAILS = ['e260366@cemig.com.br'];
+
+    auth.onAuthStateChanged(user => {
+      if (!user) {
+        window.location.href = 'login.html?redirect=admin';
+        return;
+      }
+      if (!ADMIN_EMAILS.includes(user.email.toLowerCase())) {
+        alert('Acesso negado: você não é um administrador.');
+        window.location.href = 'index.html';
+        return;
+      }
+      
+      document.getElementById('admin-user').innerText = user.email;
+      loadAdminData();
+      loadAccessRequests();
+    });
+
+    function logout() {
+      auth.signOut();
+    }
+
+    let allAdminData = [];
+    let sortCol = 'date';
+    let sortAsc = false;
+
+    // LOAD DATA
+    async function loadAdminData() {
+      const tbody = document.getElementById('admin-tbody');
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px;">Consultando banco de dados no Firebase...</td></tr>';
+
+      try {
+        const snapshot = await db.collection('formularios-ate').orderBy('updatedAt', 'desc').get();
+        if (snapshot.empty) {
+          tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px;">Nenhum formulário encontrado no banco de dados.</td></tr>';
+          return;
+        }
+
+
+        allAdminData = [];
+        snapshot.forEach(doc => {
+          const data = doc.data();
+
+          let dateObj = new Date(0);
+          let dataStr = 'N/A';
+          if (data.updatedAt) {
+            dateObj = data.updatedAt.toDate ? data.updatedAt.toDate() : new Date(data.updatedAt);
+            dataStr = dateObj.toLocaleString('pt-BR');
+          } else if (data.createdAt) {
+            dateObj = data.createdAt.toDate ? data.createdAt.toDate() : new Date(data.createdAt);
+            dataStr = dateObj.toLocaleString('pt-BR');
+          }
+
+          allAdminData.push({
+            id: doc.id,
+            form: data.formLabel || data.formType || 'Desconhecido',
+            status: data.status || 'em_andamento',
+            dateStr: dataStr,
+            dateObj: dateObj.getTime(),
+            userEmail: data.userEmail || 'Desconhecido'
+          });
+        });
+        renderAdminTable();
+
+
+      } catch (e) {
+        console.error("Erro ao carregar painel admin:", e);
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--warn);">Erro ao buscar dados do Firebase. Verifique sua conexão.</td></tr>';
+      }
+    }
+
+    function renderAdminTable() {
+      const tbody = document.getElementById('admin-tbody');
+      const searchTxt = (document.getElementById('admin-search')?.value || '').toLowerCase();
+
+      let filtered = allAdminData.filter(d => {
+        return d.id.toLowerCase().includes(searchTxt) ||
+          d.form.toLowerCase().includes(searchTxt) ||
+          d.dateStr.toLowerCase().includes(searchTxt) ||
+          d.status.toLowerCase().includes(searchTxt) ||
+          d.userEmail.toLowerCase().includes(searchTxt);
+      });
+
+      filtered.sort((a, b) => {
+        let valA, valB;
+        if (sortCol === 'date') { valA = a.dateObj; valB = b.dateObj; }
+        else if (sortCol === 'id') { valA = a.id; valB = b.id; }
+        else if (sortCol === 'form') { valA = a.form; valB = b.form; }
+        else if (sortCol === 'status') { valA = a.status; valB = b.status; }
+        else if (sortCol === 'user') { valA = a.userEmail; valB = b.userEmail; }
+
+        if (valA < valB) return sortAsc ? -1 : 1;
+        if (valA > valB) return sortAsc ? 1 : -1;
+        return 0;
+      });
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px;">Nenhum registro encontrado.</td></tr>';
+        return;
+      }
+
+      let html = '';
+      filtered.forEach(d => {
+        const statusColor = d.status === 'concluido' ? 'var(--ok)' : 'var(--accent)';
+        const statusText = d.status === 'concluido' ? 'Concluído' : 'Em Andamento';
+
+        let actions = `<button class="btn btn-primary" onclick="viewSession('${d.id}')">Visualizar</button>`;
+        if (d.status === 'concluido') {
+          actions += ` <button class="btn btn-outline" style="margin-left:8px;" onclick="reopenSession('${d.id}')">Reabrir</button>`;
+        }
+
+        html += `
+          <tr>
+            <td>${d.dateStr}</td>
+            <td style="font-family:'IBM Plex Mono',monospace; font-size:11px;">${d.id}</td>
+            <td>${d.form}</td>
+            <td style="color:${statusColor}; font-weight:600;">${statusText}</td>
+            <td style="font-size:11px; color:var(--text-light); max-width:150px; overflow:hidden; text-overflow:ellipsis;" title="${d.userEmail}">${d.userEmail}</td>
+            <td style="text-align:right;">${actions}</td>
+          </tr>
+        `;
+      });
+      tbody.innerHTML = html;
+    }
+
+    function filterAdminData() {
+      renderAdminTable();
+    }
+
+    function sortAdminData(col) {
+      if (sortCol === col) {
+        sortAsc = !sortAsc;
+      } else {
+        sortCol = col;
+        sortAsc = true;
+      }
+      renderAdminTable();
+    }
+
+    async function reopenSession(sessionId) {
+      if (!confirm(`Deseja reabrir a sessão ${sessionId} para andamento?`)) return;
+      try {
+        await db.collection('formularios-ate').doc(sessionId).update({
+          status: 'em_andamento',
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        alert('Sessão reaberta com sucesso!');
+        loadAdminData();
+      } catch (e) {
+        console.error(e);
+        alert('Erro ao reabrir sessão.');
+      }
+    }
+
+
+    function viewSession(sessionId) {
+      window.location.href = `index.html?adminSession=${sessionId}`;
+    }
+
+    // ── Solicitações de Acesso ─────────────────────────────────────────────
+    async function loadAccessRequests() {
+      const container = document.getElementById('requests-list');
+      try {
+        const snapshot = await db.collection('solicitacoes-acesso').where('status', '==', 'pendente').get();
+        if (snapshot.empty) {
+          container.innerHTML = '<p style="color: var(--text-light); font-size: 13px;">Nenhuma solicitação pendente.</p>';
+          return;
+        }
+        let html = '<table style="width:100%; border-collapse:collapse; font-size:12px;"><thead style="background:var(--cemig-blue); color:white;"><tr><th style="padding:8px;">Data</th><th style="padding:8px;">Nome</th><th style="padding:8px;">Matrícula</th><th style="padding:8px;">E-mail</th><th style="padding:8px; text-align:right;">Ação</th></tr></thead><tbody>';
+        snapshot.forEach(doc => {
+          const d = doc.data();
+          let dt = 'N/A';
+          if (d.solicitadoEm) { const dd = d.solicitadoEm.toDate ? d.solicitadoEm.toDate() : new Date(d.solicitadoEm); dt = dd.toLocaleString('pt-BR'); }
+          html += `<tr style="border-bottom:1px solid #dde3ec;"><td style="padding:8px;">${dt}</td><td style="padding:8px; font-weight:600;">${d.nome}</td><td style="padding:8px;">${d.matricula || '-'}</td><td style="padding:8px;">${d.email}</td><td style="padding:8px; text-align:right;"><button class="btn btn-primary" style="padding:4px 8px; font-size:11px;" onclick="approveRequest('${doc.id}', '${d.email}')">Aprovar e Criar</button> <button class="btn btn-outline" style="padding:4px 8px; font-size:11px; margin-left:4px;" onclick="denyRequest('${doc.id}')">Recusar</button></td></tr>`;
+        });
+        html += '</tbody></table>';
+        container.innerHTML = html;
+      } catch(e) {
+        console.error(e);
+        container.innerHTML = '<p style="color:var(--warn); font-size:13px;">Erro ao buscar solicitações.</p>';
+      }
+    }
+
+    async function approveRequest(docId, email) {
+      const pwd = prompt(`Defina uma senha provisória para ${email}:`, 'Cemig@123');
+      if (!pwd || pwd.length < 6) { alert('A senha deve ter pelo menos 6 caracteres.'); return; }
+      
+      try {
+        // Criar o usuário via segundo app (para não deslogar o admin)
+        const secondaryApp = firebase.initializeApp(firebaseConfig, 'Secondary_' + Date.now());
+        const secondaryAuth = secondaryApp.auth();
+        await secondaryAuth.createUserWithEmailAndPassword(email, pwd);
+        await secondaryAuth.signOut();
+        await secondaryApp.delete();
+
+        // Atualizar solicitação como aprovada
+        await db.collection('solicitacoes-acesso').doc(docId).update({ status: 'aprovado', aprovadoEm: firebase.firestore.FieldValue.serverTimestamp() });
+        
+        alert(`Conta criada com sucesso!\\nE-mail: ${email}\\nSenha provisória: ${pwd}\\n\\nTransmita essa senha provisória para o usuário.`);
+        loadAccessRequests();
+      } catch(e) {
+        console.error(e);
+        if (e.code === 'auth/email-already-in-use') {
+          alert('Este e-mail já possui uma conta. Marcaremos como aprovado.');
+          await db.collection('solicitacoes-acesso').doc(docId).update({ status: 'aprovado' });
+          loadAccessRequests();
+        } else {
+          alert('Erro ao criar conta: ' + e.message);
+        }
+      }
+    }
+
+    async function denyRequest(docId) {
+      if (!confirm('Deseja recusar esta solicitação?')) return;
+      await db.collection('solicitacoes-acesso').doc(docId).update({ status: 'recusado' });
+      loadAccessRequests();
+    }
+
+    // ── Criar Usuário Manualmente ──────────────────────────────────────────
+    async function createUser() {
+      const email = document.getElementById('new-user-email').value.trim();
+      const pwd = document.getElementById('new-user-pwd').value;
+      const msgDiv = document.getElementById('create-user-msg');
+      const btn = document.getElementById('create-user-btn');
+
+      if (!email || !pwd) { msgDiv.innerText = 'Preencha e-mail e senha.'; msgDiv.style.color = 'var(--warn)'; msgDiv.style.display = 'block'; return; }
+      if (pwd.length < 6) { msgDiv.innerText = 'A senha deve ter no mínimo 6 caracteres.'; msgDiv.style.color = 'var(--warn)'; msgDiv.style.display = 'block'; return; }
+      
+      btn.innerText = 'Criando...';
+      btn.disabled = true;
+
+      try {
+        const secondaryApp = firebase.initializeApp(firebaseConfig, 'CreateUser_' + Date.now());
+        const secondaryAuth = secondaryApp.auth();
+        await secondaryAuth.createUserWithEmailAndPassword(email, pwd);
+        await secondaryAuth.signOut();
+        await secondaryApp.delete();
+
+        msgDiv.innerText = `✅ Conta criada com sucesso para: ${email}`;
+        msgDiv.style.color = 'var(--ok)';
+        msgDiv.style.display = 'block';
+        document.getElementById('new-user-email').value = '';
+        document.getElementById('new-user-pwd').value = '';
+      } catch (e) {
+        console.error(e);
+        if (e.code === 'auth/email-already-in-use') { msgDiv.innerText = 'Este e-mail já está cadastrado.'; }
+        else { msgDiv.innerText = 'Erro: ' + e.message; }
+        msgDiv.style.color = 'var(--warn)';
+        msgDiv.style.display = 'block';
+      }
+      btn.innerText = 'Criar Conta';
+      btn.disabled = false;
+    }
+  </script>
+</body>
+
+</html>
