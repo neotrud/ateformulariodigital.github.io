@@ -261,7 +261,8 @@
 
       <!-- SOLICITAÇÕES DE ACESSO -->
       <div style="margin-top: 32px; border-top: 2px solid var(--border); padding-top: 24px;">
-        <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 16px; color: var(--text);">📋 Solicitações de Acesso Pendentes</h3>
+        <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 16px; color: var(--text);">📋 Solicitações de
+          Acesso Pendentes</h3>
         <div id="requests-list">
           <p style="color: var(--text-light); font-size: 13px;">Carregando...</p>
         </div>
@@ -269,11 +270,19 @@
 
       <!-- CRIAR USUÁRIO MANUALMENTE -->
       <div style="margin-top: 32px; border-top: 2px solid var(--border); padding-top: 24px;">
-        <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 16px; color: var(--text);">➕ Criar Novo Usuário</h3>
+        <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 16px; color: var(--text);">➕ Criar Novo Usuário
+        </h3>
         <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end;">
-          <div style="flex:1; min-width:200px;"><label style="font-size:11px; font-weight:600; color:var(--text-light);">E-mail</label><input type="email" id="new-user-email" placeholder="email@exemplo.com" style="width:100%; padding:8px; border:1px solid var(--border); border-radius:4px; font-size:13px;"></div>
-          <div style="flex:1; min-width:150px;"><label style="font-size:11px; font-weight:600; color:var(--text-light);">Senha Provisória</label><input type="text" id="new-user-pwd" placeholder="Mínimo 6 caracteres" style="width:100%; padding:8px; border:1px solid var(--border); border-radius:4px; font-size:13px;"></div>
-          <button class="btn btn-primary" onclick="createUser()" id="create-user-btn" style="height:36px;">Criar Conta</button>
+          <div style="flex:1; min-width:200px;"><label
+              style="font-size:11px; font-weight:600; color:var(--text-light);">E-mail</label><input type="email"
+              id="new-user-email" placeholder="email@exemplo.com"
+              style="width:100%; padding:8px; border:1px solid var(--border); border-radius:4px; font-size:13px;"></div>
+          <div style="flex:1; min-width:150px;"><label
+              style="font-size:11px; font-weight:600; color:var(--text-light);">Senha Provisória</label><input
+              type="text" id="new-user-pwd" placeholder="Mínimo 6 caracteres"
+              style="width:100%; padding:8px; border:1px solid var(--border); border-radius:4px; font-size:13px;"></div>
+          <button class="btn btn-primary" onclick="createUser()" id="create-user-btn" style="height:36px;">Criar
+            Conta</button>
         </div>
         <div id="create-user-msg" style="margin-top:8px; font-size:12px; display:none;"></div>
       </div>
@@ -295,7 +304,7 @@
 
     const auth = firebase.auth();
 
-    const ADMIN_EMAILS = ['e260366@cemig.com.br', 'manasses.faria@cemig.com.br'];
+    const ADMIN_EMAILS = ['e260366@cemig.com.br', 'manasses.faria@cemig.com.br', 'lucas.cunha@cemig.com.br'];
 
     auth.onAuthStateChanged(user => {
       if (!user) {
@@ -307,7 +316,7 @@
         window.location.href = 'index.html';
         return;
       }
-      
+
       document.getElementById('admin-user').innerText = user.email;
       loadAdminData();
       loadAccessRequests();
@@ -405,6 +414,7 @@
         if (d.status === 'concluido') {
           actions += ` <button class="btn btn-outline" style="margin-left:8px;" onclick="reopenSession('${d.id}')">Reabrir</button>`;
         }
+        actions += ` <button class="btn" style="margin-left:8px; background:var(--warn); color:white; border:none;" onclick="deleteSession('${d.id}')">Excluir</button>`;
 
         html += `
           <tr>
@@ -454,6 +464,20 @@
       window.location.href = `index.html?adminSession=${sessionId}`;
     }
 
+    async function deleteSession(sessionId) {
+      const confirmacao = confirm('⚠️ ATENÇÃO: Tem certeza que deseja EXCLUIR PERMANENTEMENTE este formulário?\n\nEsta ação apagará o documento do banco de dados e não pode ser desfeita.');
+      if (!confirmacao) return;
+
+      try {
+        await db.collection('formularios-ate').doc(sessionId).delete();
+        alert('Formulário excluído com sucesso.');
+        loadAdminData(); // Atualiza a tabela
+      } catch (error) {
+        console.error('Erro ao excluir:', error);
+        alert('Ocorreu um erro ao excluir o formulário. Tente novamente.');
+      }
+    }
+
     // ── Solicitações de Acesso ─────────────────────────────────────────────
     async function loadAccessRequests() {
       const container = document.getElementById('requests-list');
@@ -472,7 +496,7 @@
         });
         html += '</tbody></table>';
         container.innerHTML = html;
-      } catch(e) {
+      } catch (e) {
         console.error(e);
         container.innerHTML = '<p style="color:var(--warn); font-size:13px;">Erro ao buscar solicitações.</p>';
       }
@@ -481,7 +505,7 @@
     async function approveRequest(docId, email) {
       const pwd = prompt(`Defina uma senha provisória para ${email}:`, 'Cemig@123');
       if (!pwd || pwd.length < 6) { alert('A senha deve ter pelo menos 6 caracteres.'); return; }
-      
+
       try {
         // Criar o usuário via segundo app (para não deslogar o admin)
         const secondaryApp = firebase.initializeApp(firebaseConfig, 'Secondary_' + Date.now());
@@ -492,10 +516,10 @@
 
         // Atualizar solicitação como aprovada
         await db.collection('solicitacoes-acesso').doc(docId).update({ status: 'aprovado', aprovadoEm: firebase.firestore.FieldValue.serverTimestamp() });
-        
+
         alert(`Conta criada com sucesso!\\nE-mail: ${email}\\nSenha provisória: ${pwd}\\n\\nTransmita essa senha provisória para o usuário.`);
         loadAccessRequests();
-      } catch(e) {
+      } catch (e) {
         console.error(e);
         if (e.code === 'auth/email-already-in-use') {
           alert('Este e-mail já possui uma conta. Marcaremos como aprovado.');
@@ -522,7 +546,7 @@
 
       if (!email || !pwd) { msgDiv.innerText = 'Preencha e-mail e senha.'; msgDiv.style.color = 'var(--warn)'; msgDiv.style.display = 'block'; return; }
       if (pwd.length < 6) { msgDiv.innerText = 'A senha deve ter no mínimo 6 caracteres.'; msgDiv.style.color = 'var(--warn)'; msgDiv.style.display = 'block'; return; }
-      
+
       btn.innerText = 'Criando...';
       btn.disabled = true;
 
