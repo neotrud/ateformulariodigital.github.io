@@ -40,7 +40,7 @@
     }
 
     .page-wrapper {
-      max-width: 960px;
+      max-width: 1400px;
       margin: 24px auto;
       padding: 0 16px 60px;
     }
@@ -242,12 +242,14 @@
 
           <thead>
             <tr>
+              <th style="cursor:pointer;" onclick="sortAdminData('createdAt')">Data de Criação ⇅</th>
               <th style="cursor:pointer;" onclick="sortAdminData('date')">Data de Atualização ⇅</th>
               <th style="cursor:pointer;" onclick="sortAdminData('id')">ID da Sessão ⇅</th>
               <th style="cursor:pointer;" onclick="sortAdminData('form')">Formulário ⇅</th>
+              <th style="cursor:pointer;" onclick="sortAdminData('local')">Local ⇅</th>
               <th style="cursor:pointer;" onclick="sortAdminData('status')">Status ⇅</th>
               <th style="cursor:pointer;" onclick="sortAdminData('user')">Usuário (Criador) ⇅</th>
-              <th style="text-align:right;">Ações</th>
+              <th style="text-align:right; white-space:nowrap;">Ações</th>
             </tr>
           </thead>
 
@@ -336,9 +338,9 @@
       tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px;">Consultando banco de dados no Firebase...</td></tr>';
 
       try {
-        const snapshot = await db.collection('formularios-ate').orderBy('updatedAt', 'desc').get();
+        const snapshot = await db.collection('formularios-ate').orderBy('createdAt', 'desc').get();
         if (snapshot.empty) {
-          tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px;">Nenhum formulário encontrado no banco de dados.</td></tr>';
+          tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:20px;">Nenhum formulário encontrado no banco de dados.</td></tr>';
           return;
         }
 
@@ -357,12 +359,36 @@
             dataStr = dateObj.toLocaleString('pt-BR');
           }
 
+          let createdDateObj = new Date(0);
+          let createdDataStr = 'N/A';
+          if (data.createdAt) {
+            createdDateObj = data.createdAt.toDate ? data.createdAt.toDate() : new Date(data.createdAt);
+            createdDataStr = createdDateObj.toLocaleString('pt-BR');
+          } else {
+            createdDateObj = dateObj;
+            createdDataStr = dataStr;
+          }
+
+          let localStr = '-';
+          if (data.data) {
+            const fType = data.formType;
+            let rLocal = data.data['radio__' + fType + '-local'];
+            if (rLocal) {
+              localStr = rLocal === 'Outro' ? (data.data[fType + '-outro-local'] || 'Outro') : rLocal;
+            } else if (fType === 'amb') {
+              localStr = data.data['amb-municipio'] || '-';
+            }
+          }
+
           allAdminData.push({
             id: doc.id,
             form: data.formLabel || data.formType || 'Desconhecido',
             status: data.status || 'em_andamento',
             dateStr: dataStr,
             dateObj: dateObj.getTime(),
+            createdAtStr: createdDataStr,
+            createdAtObj: createdDateObj.getTime(),
+            local: localStr,
             userEmail: data.userEmail || 'Desconhecido'
           });
         });
@@ -371,7 +397,7 @@
 
       } catch (e) {
         console.error("Erro ao carregar painel admin:", e);
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--warn);">Erro ao buscar dados do Firebase. Verifique sua conexão.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:20px; color:var(--warn);">Erro ao buscar dados do Firebase. Verifique sua conexão.</td></tr>';
       }
     }
 
@@ -383,15 +409,19 @@
         return d.id.toLowerCase().includes(searchTxt) ||
           d.form.toLowerCase().includes(searchTxt) ||
           d.dateStr.toLowerCase().includes(searchTxt) ||
+          d.createdAtStr.toLowerCase().includes(searchTxt) ||
+          d.local.toLowerCase().includes(searchTxt) ||
           d.status.toLowerCase().includes(searchTxt) ||
           d.userEmail.toLowerCase().includes(searchTxt);
       });
 
       filtered.sort((a, b) => {
         let valA, valB;
-        if (sortCol === 'date') { valA = a.dateObj; valB = b.dateObj; }
+        if (sortCol === 'createdAt') { valA = a.createdAtObj; valB = b.createdAtObj; }
+        else if (sortCol === 'date') { valA = a.dateObj; valB = b.dateObj; }
         else if (sortCol === 'id') { valA = a.id; valB = b.id; }
         else if (sortCol === 'form') { valA = a.form; valB = b.form; }
+        else if (sortCol === 'local') { valA = a.local; valB = b.local; }
         else if (sortCol === 'status') { valA = a.status; valB = b.status; }
         else if (sortCol === 'user') { valA = a.userEmail; valB = b.userEmail; }
 
@@ -401,7 +431,7 @@
       });
 
       if (filtered.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px;">Nenhum registro encontrado.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:20px;">Nenhum registro encontrado.</td></tr>';
         return;
       }
 
@@ -418,12 +448,14 @@
 
         html += `
           <tr>
+            <td>${d.createdAtStr}</td>
             <td>${d.dateStr}</td>
             <td style="font-family:'IBM Plex Mono',monospace; font-size:11px;">${d.id}</td>
             <td>${d.form}</td>
+            <td>${d.local}</td>
             <td style="color:${statusColor}; font-weight:600;">${statusText}</td>
             <td style="font-size:11px; color:var(--text-light); max-width:150px; overflow:hidden; text-overflow:ellipsis;" title="${d.userEmail}">${d.userEmail}</td>
-            <td style="text-align:right;">${actions}</td>
+            <td style="text-align:right; white-space:nowrap;">${actions}</td>
           </tr>
         `;
       });
