@@ -8,6 +8,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
 
@@ -1103,11 +1104,19 @@
         display: none !important;
       }
     }
-  </style>
+  
+    .login-container { max-width: 400px; margin: 100px auto; background: white; padding: 32px; border-radius: 8px; border: 1px solid var(--border); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    .login-container h2 { color: var(--cemig-blue); margin-bottom: 8px; font-weight:700; font-size: 20px;}
+    .login-input { width: 100%; padding: 12px; margin-bottom: 16px; border: 1px solid var(--border); border-radius: 4px; font-family: inherit; font-size: 14px;}
+    .auth-toggle { color: var(--cemig-blue); cursor: pointer; text-decoration: underline; font-size: 12px; text-align: center; display: block; margin-top: 16px; font-weight:600;}
+    .user-badge { background: #e3eaf5; color: var(--text); padding: 6px 12px; border-radius: 16px; font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; gap: 12px; }
+    .logout-btn { background: none; border: none; color: var(--warn); cursor: pointer; font-size: 11px; font-weight: 600; text-decoration: underline; }
+</style>
 </head>
 
 <body>
   <div class="page-wrapper">
+
 
     <!-- ═══════════════ HOME SCREEN ═══════════════ -->
     <div id="home-screen" class="home-screen">
@@ -1159,6 +1168,19 @@
         <div class="history-title">Sessões Recentes</div>
         <div id="history-list" class="history-list">
           <div class="history-empty">Nenhuma sessão salva ainda.</div>
+        </div>
+      </div>
+
+      <!-- ÁREA DO USUÁRIO / ADMIN -->
+      <div style="margin-top: 24px; text-align: center;">
+        <div id="user-info" style="display:none;">
+          <span style="font-size: 12px; color: var(--text-light);">Logado como: </span>
+          <span id="user-email-display" style="font-size: 12px; font-weight: 600; color: var(--text);"></span>
+          <span style="margin: 0 8px;">|</span>
+          <a href="#" onclick="logout(); return false;" style="font-size: 12px; color: var(--warn); font-weight: 600;">Sair</a>
+        </div>
+        <div id="admin-area-btn" style="display:none; margin-top: 12px;">
+          <a href="admin.html" style="display: inline-block; padding: 10px 24px; background: #1a2332; color: white; border-radius: 6px; text-decoration: none; font-size: 13px; font-weight: 600;">🔐 Área Administrativa</a>
         </div>
       </div>
     </div>
@@ -2642,7 +2664,14 @@
         --cemig-blue: #00a651 !important;
       }
     }
-  </style>
+  
+    .login-container { max-width: 400px; margin: 100px auto; background: white; padding: 32px; border-radius: 8px; border: 1px solid var(--border); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    .login-container h2 { color: var(--cemig-blue); margin-bottom: 8px; font-weight:700; font-size: 20px;}
+    .login-input { width: 100%; padding: 12px; margin-bottom: 16px; border: 1px solid var(--border); border-radius: 4px; font-family: inherit; font-size: 14px;}
+    .auth-toggle { color: var(--cemig-blue); cursor: pointer; text-decoration: underline; font-size: 12px; text-align: center; display: block; margin-top: 16px; font-weight:600;}
+    .user-badge { background: #e3eaf5; color: var(--text); padding: 6px 12px; border-radius: 16px; font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; gap: 12px; }
+    .logout-btn { background: none; border: none; color: var(--warn); cursor: pointer; font-size: 11px; font-weight: 600; text-decoration: underline; }
+</style>
 
   <script>
     // ════════════════════════════════════════════════════════
@@ -3912,6 +3941,39 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
+    // ── Auth Logic ────────────────────────────────────────────────────────────
+    const auth = firebase.auth();
+    let currentUser = null;
+    const ADMIN_EMAILS = ['e260366@cemig.com.br'];
+
+    function logout() {
+      auth.signOut();
+    }
+
+    auth.onAuthStateChanged(user => {
+      if (!user) {
+        window.location.href = 'login.html';
+        return;
+      }
+
+      currentUser = user;
+      document.getElementById('user-email-display').innerText = user.email;
+      document.getElementById('user-info').style.display = '';
+
+      const isAdmin = ADMIN_EMAILS.includes(user.email.toLowerCase());
+      document.getElementById('admin-area-btn').style.display = isAdmin ? '' : 'none';
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const adminSessionId = urlParams.get('adminSession');
+
+      if (!adminSessionId) {
+        if (!currentFormType) {
+          document.getElementById('home-screen').classList.remove('hidden');
+        }
+        renderHistory();
+      }
+    });
+
     // ════════════════════════════════════════════════════════
     // SESSION MANAGEMENT
     // ════════════════════════════════════════════════════════
@@ -4109,6 +4171,8 @@
           createdAt: firebase.firestore.FieldValue.serverTimestamp(),
           updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
           status: 'em_andamento',
+          userId: currentUser ? currentUser.uid : null,
+          userEmail: currentUser ? currentUser.email : null,
           data: {}
         });
         saveToLocalHistory(currentSessionId, currentFormType);
@@ -4142,6 +4206,8 @@
           formLabel: FORM_LABELS[currentFormType],
           updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
           status: 'em_andamento',
+          userId: currentUser ? currentUser.uid : null,
+          userEmail: currentUser ? currentUser.email : null,
           data: formData
         }, { merge: true });
         setStatus('Salvo ✓', 'saved');
@@ -4260,6 +4326,8 @@
           updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
           finalizadoEm: firebase.firestore.FieldValue.serverTimestamp(),
           status: 'concluido',
+          userId: currentUser ? currentUser.uid : null,
+          userEmail: currentUser ? currentUser.email : null,
           data: formData
         }, { merge: true });
         setStatus('✔ Concluído', 'concluido');
@@ -4290,29 +4358,62 @@
       renderHistory();
     }
 
-    function renderHistory() {
+    async function renderHistory() {
       const list = document.getElementById('history-list');
       if (!list) return;
-      const history = JSON.parse(localStorage.getItem('ate-history') || '[]');
-      if (history.length === 0) {
-        list.innerHTML = '<div class="history-empty">Nenhuma sessão salva ainda.</div>';
+      if (!currentUser) {
+        list.innerHTML = '<div class="history-empty">Faça login para ver suas sessões.</div>';
         return;
       }
-      list.innerHTML = history.map(h => {
-        const date = new Date(h.savedAt).toLocaleString('pt-BR');
-        const statusClass = h.status === 'concluido' ? 'concluido' : 'em-andamento';
-        const statusLabel = h.status === 'concluido' ? '✔ Concluído' : '✏ Em andamento';
-        return `<div class="history-item">
-          <div class="hi-id">${h.id}</div>
-          <div class="hi-center">
-            <span class="hi-status ${statusClass}">${statusLabel}</span>
-            <div class="hi-meta">${h.formLabel} &nbsp;·&nbsp; ${date}</div>
-          </div>
-          <div class="hi-btns">
-            <button class="resume" onclick="loadSession('${h.id}')">▶ Retomar</button>
-          </div>
-        </div>`;
-      }).join('');
+      
+      list.innerHTML = '<div class="history-empty">Buscando na nuvem...</div>';
+      
+      try {
+        const snapshot = await db.collection('formularios-ate')
+                                 .where('userId', '==', currentUser.uid)
+                                 .get();
+        let history = [];
+        snapshot.forEach(doc => {
+          history.push({ id: doc.id, ...doc.data() });
+        });
+        
+        // Client-side sort to avoid needing a composite index in Firestore
+        history.sort((a,b) => {
+          const timeA = a.updatedAt ? (a.updatedAt.toDate ? a.updatedAt.toDate().getTime() : new Date(a.updatedAt).getTime()) : 0;
+          const timeB = b.updatedAt ? (b.updatedAt.toDate ? b.updatedAt.toDate().getTime() : new Date(b.updatedAt).getTime()) : 0;
+          return timeB - timeA;
+        });
+        
+        history = history.slice(0, 10); // Keep top 10
+
+        if (history.length === 0) {
+          list.innerHTML = '<div class="history-empty">Nenhuma sessão salva ainda.</div>';
+          return;
+        }
+
+        list.innerHTML = history.map(h => {
+          let dateStr = 'N/A';
+          if (h.updatedAt) {
+            const dateObj = h.updatedAt.toDate ? h.updatedAt.toDate() : new Date(h.updatedAt);
+            dateStr = dateObj.toLocaleString('pt-BR');
+          }
+          const statusClass = h.status === 'concluido' ? 'concluido' : 'em-andamento';
+          const statusLabel = h.status === 'concluido' ? '✔ Concluído' : '✏ Em andamento';
+          return `<div class="history-item">
+            <div class="hi-id">${h.id}</div>
+            <div class="hi-center">
+              <span class="hi-status ${statusClass}">${statusLabel}</span>
+              <div class="hi-meta">${h.formLabel || h.formType} &nbsp;·&nbsp; ${dateStr}</div>
+            </div>
+            <div class="hi-btns">
+              <button class="resume" onclick="loadSession('${h.id}')">▶ Retomar</button>
+            </div>
+          </div>`;
+        }).join('');
+      } catch (e) {
+        console.error("Erro ao buscar histórico:", e);
+        list.innerHTML = '<div class="history-empty" style="color:var(--warn)">Erro ao carregar histórico. Verifique sua conexão.</div>';
+      }
     }
 
     // ── Resume session ────────────────────────────────────────────────────────
@@ -4389,7 +4490,7 @@
 
     // ── Init history on load ──────────────────────────────────────────────────
     window.addEventListener('DOMContentLoaded', () => {
-      renderHistory();
+      // renderHistory() is now called by onAuthStateChanged
       // Verificação de acesso via Painel Admin (URL param)
       const urlParams = new URLSearchParams(window.location.search);
       const adminSessionId = urlParams.get('adminSession');
