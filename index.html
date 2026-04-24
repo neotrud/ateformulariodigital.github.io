@@ -160,6 +160,27 @@
       display: flex;
       align-items: center;
       gap: 24px;
+      position: relative;
+    }
+
+    .form-header .print-session-info {
+      position: absolute;
+      right: 28px;
+      bottom: 14px;
+      font-size: 11px;
+      font-family: 'IBM Plex Mono', monospace;
+      text-align: right;
+      opacity: 0.9;
+      line-height: 1.4;
+    }
+
+    .form-header .print-contract-info {
+      margin-top: 8px;
+      font-size: 15px;
+      font-weight: 600;
+      text-align: left;
+      line-height: 1.4;
+      letter-spacing: 0.2px;
     }
 
     .cemig-logo {
@@ -179,16 +200,23 @@
     }
 
     .form-header h1 {
-      font-size: 18px;
-      font-weight: 700;
+      font-size: 12px;
+      font-weight: 400;
+      opacity: 0.85;
       letter-spacing: 0.3px;
+      text-transform: uppercase;
     }
 
     .form-header h2 {
-      font-size: 13px;
-      font-weight: 400;
-      opacity: 0.85;
+      font-size: 20px;
+      font-weight: 700;
       margin-top: 4px;
+      letter-spacing: 0.3px;
+    }
+
+    .print-only { display: none; }
+    @media print {
+      .print-only { display: block !important; }
     }
 
     .form-header .sub {
@@ -1235,8 +1263,9 @@
       <div class="history-section">
         <div class="history-title">Buscar</div>
         <div class="history-resume">
-          <input type="text" id="resume-input" placeholder="Buscar por ID, Formulário, Local ou Data..." maxlength="50" onkeyup="filterHistory()">
-          <button onclick="resumeSession()" title="Retomar ID exato">Retomar ID</button>
+          <input type="text" id="resume-input" placeholder="Buscar por ID, Formulário, Local ou Data..." maxlength="50"
+            onkeyup="filterHistory()">
+          <button onclick="visualizarSession()" title="Visualizar sessão pelo ID exato">Visualizar ID</button>
         </div>
         <div class="history-title">Sessões Recentes</div>
         <div id="history-list" class="history-list">
@@ -1280,7 +1309,8 @@
         <div>
           <h1>FORMULÁRIO PARA AVALIAÇÃO TÉCNICA EM EMPREITEIRA – ATE</h1>
           <h2>INFRAESTRUTURA ADMINISTRATIVA</h2>
-        <div class="print-session-info" style="margin-left: auto; text-align: right; font-size: 11px; font-family: monospace; opacity: 0.9; line-height: 1.4;"></div>
+          <div class="print-only print-contract-info"></div>
+          <div class="print-session-info"></div>
         </div>
       </div>
 
@@ -1306,8 +1336,12 @@
         <div class="grid g2" style="margin-bottom:10px;">
           <div class="field">
             <label>N° do Contrato <span style="color:var(--warn);">*</span></label>
-            <input type="text" inputmode="numeric" maxlength="10" minlength="10" pattern="\d{10}"
-              class="contrato-input" data-field="infra-num-contrato" placeholder="10 dígitos numéricos">
+            <input type="text" inputmode="numeric" maxlength="10" minlength="10" pattern="\d{10}" class="contrato-input"
+              data-field="infra-num-contrato" placeholder="10 dígitos numéricos">
+          </div>
+          <div class="field">
+            <label>Contratada</label>
+            <input type="text" data-field="infra-contratada" placeholder="Nome da contratada">
           </div>
         </div>
         <div class="grid g2" style="align-items:center;">
@@ -1318,7 +1352,8 @@
                   onchange="toggleOutro(this,'infra-outro-local')"> Uberlândia</label>
               <label><input type="radio" name="infra-local" value="Ituiutaba"
                   onchange="toggleOutro(this,'infra-outro-local')"> Ituiutaba</label>
-              <label><input type="radio" name="infra-local" value="Outro" onchange="toggleOutro(this,'infra-outro-local')">
+              <label><input type="radio" name="infra-local" value="Outro"
+                  onchange="toggleOutro(this,'infra-outro-local')">
                 Outro:</label>
               <input type="text" id="infra-outro-local" class="hidden" placeholder="Especifique..."
                 style="width:150px;border:1px solid #b0bec5;border-radius:4px;padding:4px 8px;font-size:12px;"
@@ -1461,7 +1496,8 @@
         <div>
           <h1>FORMULÁRIO PARA AVALIAÇÃO TÉCNICA EM EMPREITEIRA – ATE</h1>
           <h2>ALMOXARIFADO</h2>
-        <div class="print-session-info" style="margin-left: auto; text-align: right; font-size: 11px; font-family: monospace; opacity: 0.9; line-height: 1.4;"></div>
+          <div class="print-only print-contract-info"></div>
+          <div class="print-session-info"></div>
         </div>
       </div>
 
@@ -1488,8 +1524,12 @@
         <div class="grid g2" style="margin-bottom:10px;">
           <div class="field">
             <label>N° do Contrato <span style="color:var(--warn);">*</span></label>
-            <input type="text" inputmode="numeric" maxlength="10" minlength="10" pattern="\d{10}"
-              class="contrato-input" data-field="almox-num-contrato" placeholder="10 dígitos numéricos">
+            <input type="text" inputmode="numeric" maxlength="10" minlength="10" pattern="\d{10}" class="contrato-input"
+              data-field="almox-num-contrato" placeholder="10 dígitos numéricos">
+          </div>
+          <div class="field">
+            <label>Contratada</label>
+            <input type="text" data-field="almox-contratada" placeholder="Nome da contratada">
           </div>
         </div>
         <div class="grid g2" style="align-items:center;">
@@ -1500,7 +1540,8 @@
                   onchange="toggleOutro(this,'almox-outro-local')"> Uberlândia</label>
               <label><input type="radio" name="almox-local" value="Ituiutaba"
                   onchange="toggleOutro(this,'almox-outro-local')"> Ituiutaba</label>
-              <label><input type="radio" name="almox-local" value="Outro" onchange="toggleOutro(this,'almox-outro-local')">
+              <label><input type="radio" name="almox-local" value="Outro"
+                  onchange="toggleOutro(this,'almox-outro-local')">
                 Outro:</label>
               <input type="text" id="almox-outro-local" class="hidden" placeholder="Especifique..."
                 style="width:150px;border:1px solid #b0bec5;border-radius:4px;padding:4px 8px;font-size:12px;"
@@ -1663,7 +1704,8 @@
           <h1>FORMULÁRIO PARA AVALIAÇÃO TÉCNICA EM EMPREITEIRA – ATE</h1>
           <h2>EQUIPES DE MOTOCICLISTAS</h2>
           <div class="sub">Estrutura de pessoal MO1: 1 Instalador motociclista</div>
-        <div class="print-session-info" style="margin-left: auto; text-align: right; font-size: 11px; font-family: monospace; opacity: 0.9; line-height: 1.4;"></div>
+          <div class="print-only print-contract-info"></div>
+          <div class="print-session-info"></div>
         </div>
       </div>
 
@@ -1689,8 +1731,12 @@
         <div class="grid g2" style="margin-bottom:10px;">
           <div class="field">
             <label>N° do Contrato <span style="color:var(--warn);">*</span></label>
-            <input type="text" inputmode="numeric" maxlength="10" minlength="10" pattern="\d{10}"
-              class="contrato-input" data-field="moto-num-contrato" placeholder="10 dígitos numéricos">
+            <input type="text" inputmode="numeric" maxlength="10" minlength="10" pattern="\d{10}" class="contrato-input"
+              data-field="moto-num-contrato" placeholder="10 dígitos numéricos">
+          </div>
+          <div class="field">
+            <label>Contratada</label>
+            <input type="text" data-field="moto-contratada" placeholder="Nome da contratada">
           </div>
         </div>
         <div class="grid g2">
@@ -1889,7 +1935,8 @@
           <h1>FORMULÁRIO PARA AVALIAÇÃO TÉCNICA EM EMPREITEIRA – ATE</h1>
           <h2>EQUIPES DE MULTIFUNCIONAL</h2>
           <div class="sub">Estrutura de pessoal ES2: Equipe de serviços – 2 componentes (2 instaladores)</div>
-        <div class="print-session-info" style="margin-left: auto; text-align: right; font-size: 11px; font-family: monospace; opacity: 0.9; line-height: 1.4;"></div>
+          <div class="print-only print-contract-info"></div>
+          <div class="print-session-info"></div>
         </div>
       </div>
 
@@ -1915,8 +1962,12 @@
         <div class="grid g2" style="margin-bottom:10px;">
           <div class="field">
             <label>N° do Contrato <span style="color:var(--warn);">*</span></label>
-            <input type="text" inputmode="numeric" maxlength="10" minlength="10" pattern="\d{10}"
-              class="contrato-input" data-field="es2-num-contrato" placeholder="10 dígitos numéricos">
+            <input type="text" inputmode="numeric" maxlength="10" minlength="10" pattern="\d{10}" class="contrato-input"
+              data-field="es2-num-contrato" placeholder="10 dígitos numéricos">
+          </div>
+          <div class="field">
+            <label>Contratada</label>
+            <input type="text" data-field="es2-contratada" placeholder="Nome da contratada">
           </div>
         </div>
         <div class="grid g2">
@@ -2171,7 +2222,8 @@
           <h1>FORMULÁRIO PARA AVALIAÇÃO TÉCNICA EM EMPREITEIRA – ATE</h1>
           <h2>EQUIPES DE MULTIFUNCIONAL</h2>
           <div class="sub">Estrutura de pessoal EL2: Equipe de serviços – 2 componentes (2 instaladores)</div>
-        <div class="print-session-info" style="margin-left: auto; text-align: right; font-size: 11px; font-family: monospace; opacity: 0.9; line-height: 1.4;"></div>
+          <div class="print-only print-contract-info"></div>
+          <div class="print-session-info"></div>
         </div>
       </div>
 
@@ -2197,8 +2249,12 @@
         <div class="grid g2" style="margin-bottom:10px;">
           <div class="field">
             <label>N° do Contrato <span style="color:var(--warn);">*</span></label>
-            <input type="text" inputmode="numeric" maxlength="10" minlength="10" pattern="\d{10}"
-              class="contrato-input" data-field="el2-num-contrato" placeholder="10 dígitos numéricos">
+            <input type="text" inputmode="numeric" maxlength="10" minlength="10" pattern="\d{10}" class="contrato-input"
+              data-field="el2-num-contrato" placeholder="10 dígitos numéricos">
+          </div>
+          <div class="field">
+            <label>Contratada</label>
+            <input type="text" data-field="el2-contratada" placeholder="Nome da contratada">
           </div>
         </div>
         <div class="grid g2">
@@ -2453,7 +2509,8 @@
           <h1>FORMULÁRIO PARA AVALIAÇÃO TÉCNICA EM EMPREITEIRA – ATE</h1>
           <h2>PARTE AMBIENTAL</h2>
           <div class="sub">Check list orientativo para avaliação ambiental em base operativa de empreiteiras</div>
-        <div class="print-session-info" style="margin-left: auto; text-align: right; font-size: 11px; font-family: monospace; opacity: 0.9; line-height: 1.4;"></div>
+          <div class="print-only print-contract-info"></div>
+          <div class="print-session-info"></div>
         </div>
       </div>
 
@@ -2463,12 +2520,15 @@
         <div class="grid g2" style="margin-bottom:12px;">
           <div class="field">
             <label>N° do Contrato <span style="color:var(--warn);">*</span></label>
-            <input type="text" inputmode="numeric" maxlength="10" minlength="10" pattern="\d{10}"
-              class="contrato-input" data-field="amb-num-contrato" placeholder="10 dígitos numéricos">
+            <input type="text" inputmode="numeric" maxlength="10" minlength="10" pattern="\d{10}" class="contrato-input"
+              data-field="amb-num-contrato" placeholder="10 dígitos numéricos">
+          </div>
+          <div class="field">
+            <label>Contratada</label>
+            <input type="text" data-field="amb-contratada" placeholder="Nome da contratada">
           </div>
         </div>
         <div class="grid g2" style="margin-bottom:12px;">
-          <div class="field"><label>Contratada</label><input type="text" data-field="amb-contratada"></div>
           <div class="field">
             <label>Local da Inspeção</label>
             <div class="location-group" style="margin-top:6px;">
@@ -3618,9 +3678,14 @@
         window.location.href = 'admin.html';
         return;
       }
-      ['form-infra', 'form-moto', 'form-es2', 'form-el2', 'form-amb', 'form-almox'].forEach(id => document.getElementById(id).classList.add('hidden'));
+      ['form-infra', 'form-moto', 'form-es2', 'form-el2', 'form-amb', 'form-almox'].forEach(id => {
+        const c = document.getElementById(id);
+        c.classList.add('hidden');
+        removeTakeoverBanner(c);
+      });
       document.getElementById('home-screen').classList.remove('hidden');
       currentForm = null;
+      isViewingForeign = false;
       window.scrollTo(0, 0);
     }
 
@@ -3709,12 +3774,40 @@
       }
     });
 
+    function populatePrintContractInfo() {
+      if (!currentFormType) return;
+      const container = document.getElementById('form-' + currentFormType);
+      if (!container) return;
+      const numContrato = container.querySelector(`input[data-field="${currentFormType}-num-contrato"]`)?.value?.trim() || '';
+      const contratada = container.querySelector(`input[data-field="${currentFormType}-contratada"]`)?.value?.trim() || '';
+      const el = container.querySelector('.print-contract-info');
+      if (!el) return;
+      const parts = [];
+      if (numContrato) parts.push(`Contrato: ${numContrato}`);
+      if (contratada) parts.push(`Contratada: ${contratada}`);
+      el.innerHTML = parts.join('<br>');
+    }
+
+    function buildPdfFilename() {
+      const label = FORM_LABELS[currentFormType] || 'Formulario';
+      const now = new Date();
+      const dd = String(now.getDate()).padStart(2, '0');
+      const mm = String(now.getMonth() + 1).padStart(2, '0');
+      const yyyy = now.getFullYear();
+      const raw = `${label} - ${dd}-${mm}-${yyyy}`;
+      return raw.replace(/[\\/:*?"<>|]/g, '').trim();
+    }
+
     function exportPDF() {
       if (!validateFormNC(currentFormType)) return;
+      populatePrintContractInfo();
+      const originalTitle = document.title;
+      document.title = buildPdfFilename();
       showExportOverlay('Gerando PDF... Aguarde.');
       setTimeout(() => {
         window.print();
         hideExportOverlay();
+        setTimeout(() => { document.title = originalTitle; }, 1500);
       }, 600);
     }
 
@@ -4382,6 +4475,14 @@
     function restoreFormData(formId, data) {
       const container = document.getElementById('form-' + formId);
 
+      // Migração retrocompatível: registros antigos salvaram "Fornecedor" como
+      // <tipo>-fornecedor. O campo foi renomeado para <tipo>-contratada.
+      const legacyFornecedorKey = formId + '-fornecedor';
+      const currentContratadaKey = formId + '-contratada';
+      if (data && data[legacyFornecedorKey] && !data[currentContratadaKey]) {
+        data[currentContratadaKey] = data[legacyFornecedorKey];
+      }
+
       Object.entries(data).forEach(([key, value]) => {
         if (key.startsWith('radio__')) {
           const name = key.replace('radio__', '');
@@ -4454,6 +4555,8 @@
           status: 'em_andamento',
           userId: currentUser ? currentUser.uid : null,
           userEmail: currentUser ? currentUser.email : null,
+          createdBy: currentUser ? currentUser.email : null,
+          ownershipHistory: [],
           data: {}
         });
         saveToLocalHistory(currentSessionId, currentFormType);
@@ -4622,6 +4725,7 @@
     function saveToLocalHistory(sessionId, formType, status) {
       const urlParams = new URLSearchParams(window.location.search);
       if (urlParams.get('adminSession')) return;
+      if (isViewingForeign) return;
       let history = JSON.parse(localStorage.getItem('ate-history') || '[]');
       history = history.filter(h => h.id !== sessionId);
       history.unshift({
@@ -4660,6 +4764,16 @@
           const timeB = b.updatedAt ? (b.updatedAt.toDate ? b.updatedAt.toDate().getTime() : new Date(b.updatedAt).getTime()) : 0;
           return timeB - timeA;
         });
+
+        // Reconciliar cache local: remover IDs que não pertencem mais ao usuário
+        try {
+          const validIds = new Set(allUserHistory.map(h => h.id));
+          let local = JSON.parse(localStorage.getItem('ate-history') || '[]');
+          const cleaned = local.filter(h => validIds.has(h.id));
+          if (cleaned.length !== local.length) {
+            localStorage.setItem('ate-history', JSON.stringify(cleaned));
+          }
+        } catch (_) { /* ignore */ }
 
         filterHistory();
       } catch (e) {
@@ -4724,6 +4838,14 @@
       list.innerHTML = filtered.map(h => {
         const statusClass = h.status === 'concluido' ? 'concluido' : 'em-andamento';
         const statusLabel = h.status === 'concluido' ? '✔ Concluído' : '✏ Em andamento';
+        let assumidoBadge = '';
+        if (Array.isArray(h.ownershipHistory) && h.ownershipHistory.length > 0) {
+          const last = h.ownershipHistory[h.ownershipHistory.length - 1];
+          if (last && last.to === currentUser?.email) {
+            const from = last.from || 'órfão';
+            assumidoBadge = `<div style="font-size:10px;margin-top:3px;color:#8d6e00;background:#fff8e1;border:1px solid #e8a900;border-radius:3px;padding:2px 6px;display:inline-block;">👤 Assumido de ${from}</div>`;
+          }
+        }
         return `<div class="history-item">
           <div class="hi-id">${h.id}</div>
           <div class="hi-center">
@@ -4734,6 +4856,7 @@
               <div style="font-size: 11px; opacity: 0.8; margin-top: 2px;">
                 Criado em: ${h.createdDateStr} · Atualizado: ${h.dateStr}
               </div>
+              ${assumidoBadge}
             </div>
           </div>
           <div class="hi-btns">
@@ -4743,12 +4866,72 @@
       }).join('');
     }
 
-    // ── Resume session ────────────────────────────────────────────────────────
-    function resumeSession() {
+    // ── Visualizar / Retomar sessão ───────────────────────────────────────────
+    let isViewingForeign = false; // true quando usuário atual NÃO é dono da sessão carregada
+
+    function visualizarSession() {
       const input = document.getElementById('resume-input');
       const id = input ? input.value.trim().toUpperCase() : '';
       if (!id) { alert('Digite um ID de sessão válido.'); return; }
       loadSession(id);
+    }
+    // Alias retrocompatível
+    const resumeSession = visualizarSession;
+
+    function removeTakeoverBanner(container) {
+      if (!container) return;
+      const b = container.querySelector('.takeover-banner');
+      if (b) b.remove();
+    }
+
+    function renderTakeoverBanner(formId, ownerEmail, isOrphan) {
+      const container = document.getElementById('form-' + formId);
+      if (!container) return;
+      removeTakeoverBanner(container);
+      const banner = document.createElement('div');
+      banner.className = 'takeover-banner';
+      banner.style.cssText = 'width:100%;padding:12px 14px;background:#fff8e1;color:#8d6e00;font-size:13px;border-radius:6px;border:1px solid #e8a900;margin-bottom:10px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;';
+      const msg = isOrphan
+        ? '⚠ Este formulário <b>não está atribuído a nenhum usuário</b> (órfão). Você pode editar, mas ele não aparecerá no seu histórico até que o assuma.'
+        : `⚠ Este formulário pertence a <b>${ownerEmail}</b>. Você pode editar, mas ele não aparecerá no seu histórico até que o assuma.`;
+      banner.innerHTML = `
+        <div style="flex:1;min-width:240px;">${msg}</div>
+        <button type="button" class="btn btn-finalizar" onclick="assumirSession(this)"
+          style="padding:8px 16px;font-size:12px;">👤 Assumir</button>
+      `;
+      container.querySelector('.form-header').insertAdjacentElement('afterend', banner);
+    }
+
+    async function assumirSession(btn) {
+      if (!currentSessionId || !currentUser) return;
+      if (!confirm('Deseja assumir este formulário?\n\nEle passará a aparecer no SEU histórico e sairá do histórico do dono anterior.')) return;
+      const original = btn.innerHTML;
+      btn.innerHTML = '⏳ Assumindo...';
+      btn.disabled = true;
+      try {
+        const ref = db.collection('formularios-ate').doc(currentSessionId);
+        const snap = await ref.get();
+        const prevEmail = snap.exists ? (snap.data().userEmail || null) : null;
+        await ref.update({
+          userId: currentUser.uid,
+          userEmail: currentUser.email,
+          ownershipHistory: firebase.firestore.FieldValue.arrayUnion({
+            from: prevEmail,
+            to: currentUser.email,
+            at: firebase.firestore.Timestamp.now()
+          }),
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        isViewingForeign = false;
+        removeTakeoverBanner(document.getElementById('form-' + currentFormType));
+        saveToLocalHistory(currentSessionId, currentFormType);
+        setStatus('Sessão assumida ✓', 'saved');
+      } catch (e) {
+        console.error('Erro ao assumir sessão:', e);
+        alert('Erro ao assumir a sessão. Tente novamente.');
+        btn.innerHTML = original;
+        btn.disabled = false;
+      }
     }
 
     async function loadSession(sessionId) {
@@ -4768,6 +4951,16 @@
         currentSessionId = sessionId;
         currentFormType = session.formType;
         currentSessionCreatedAt = session.createdAt ? (session.createdAt.toDate ? session.createdAt.toDate() : new Date(session.createdAt)) : new Date();
+
+        // Detecção de propriedade
+        const urlParams = new URLSearchParams(window.location.search);
+        const isAdminView = !!urlParams.get('adminSession');
+        const ownerUid = session.userId || null;
+        const ownerEmail = session.userEmail || null;
+        const isOrphan = !ownerUid && !ownerEmail;
+        const isOwned = currentUser && ownerUid === currentUser.uid;
+        isViewingForeign = !isAdminView && !isOwned && session.status !== 'concluido';
+
         // Show the form first (tables need to render)
         showForm(session.formType);
         updateSessionDisplay();
@@ -4780,6 +4973,11 @@
           } else {
             setStatus('Sessão carregada ✓', 'saved');
             attachAutoSave(session.formType);
+            if (isViewingForeign) {
+              renderTakeoverBanner(session.formType, ownerEmail, isOrphan);
+            } else {
+              removeTakeoverBanner(document.getElementById('form-' + session.formType));
+            }
           }
         }, 300);
       } catch (e) {
@@ -4811,6 +5009,8 @@
         currentSessionId = null;
         currentSessionCreatedAt = null;
         currentFormType = formId;
+        isViewingForeign = false;
+        removeTakeoverBanner(document.getElementById('form-' + formId));
         updateSessionDisplay();
         setStatus('Sessão será criada ao inserir dados', '');
       }
