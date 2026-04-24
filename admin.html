@@ -175,6 +175,168 @@
       display: none !important;
     }
 
+    .filter-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 12px;
+      padding: 10px 12px;
+      background: #f4f6f9;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+    }
+
+    .filter-bar select,
+    .filter-bar input[type="text"] {
+      padding: 7px 10px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-size: 12px;
+      font-family: 'IBM Plex Sans', sans-serif;
+      background: white;
+    }
+
+    .filter-bar select.active,
+    .filter-bar input[type="text"].active {
+      border-color: var(--cemig-blue);
+      background: #e8f5ea;
+      font-weight: 600;
+    }
+
+    .filter-bar input[type="text"] {
+      flex: 1;
+      min-width: 180px;
+    }
+
+    .filter-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-size: 12px;
+      background: white;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .filter-chip input[type="checkbox"] {
+      margin: 0;
+      cursor: pointer;
+    }
+
+    .filter-chip.active {
+      border-color: var(--cemig-blue);
+      background: #e8f5ea;
+      font-weight: 600;
+    }
+
+    #result-count {
+      font-size: 12px;
+      color: var(--text-light);
+      margin-left: auto;
+      white-space: nowrap;
+    }
+
+    #result-count.filtered {
+      color: var(--cemig-blue);
+      font-weight: 600;
+    }
+
+    .multi-select {
+      position: relative;
+      display: inline-block;
+    }
+
+    .ms-trigger {
+      padding: 7px 28px 7px 10px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-size: 12px;
+      font-family: 'IBM Plex Sans', sans-serif;
+      background: white;
+      cursor: pointer;
+      user-select: none;
+      min-width: 160px;
+      max-width: 260px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      position: relative;
+    }
+
+    .ms-trigger::after {
+      content: '▾';
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 10px;
+      opacity: 0.6;
+    }
+
+    .multi-select.active .ms-trigger {
+      border-color: var(--cemig-blue);
+      background: #e8f5ea;
+      font-weight: 600;
+    }
+
+    .ms-panel {
+      display: none;
+      position: absolute;
+      top: calc(100% + 4px);
+      left: 0;
+      min-width: 240px;
+      max-height: 280px;
+      overflow-y: auto;
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+      z-index: 50;
+      padding: 4px;
+    }
+
+    .multi-select.open .ms-panel {
+      display: block;
+    }
+
+    .ms-option {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 8px;
+      font-size: 12px;
+      cursor: pointer;
+      border-radius: 3px;
+    }
+
+    .ms-option:hover {
+      background: #eef2f7;
+    }
+
+    .ms-option input[type="checkbox"] {
+      margin: 0;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .ms-option-label {
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .ms-empty {
+      padding: 10px;
+      font-size: 12px;
+      color: var(--text-light);
+      text-align: center;
+    }
+
     .login-box {
       max-width: 400px;
       margin: 100px auto;
@@ -232,10 +394,37 @@
       </div>
 
 
-      <div style="margin-bottom:16px;">
-        <input type="text" id="admin-search" placeholder="🔍 Pesquisar por ID, Data, Formulário ou Status..."
-          onkeyup="filterAdminData()"
-          style="width:100%; padding:10px; border:1px solid var(--border); border-radius:4px; font-size:13px; font-family:'IBM Plex Sans', sans-serif;">
+      <div class="filter-bar">
+        <select id="f-status">
+          <option value="">Status: Todos</option>
+          <option value="em_andamento">Em andamento</option>
+          <option value="concluido">Concluído</option>
+        </select>
+        <div class="multi-select" data-ms="form" data-label="Formulário">
+          <div class="ms-trigger" tabindex="0">Formulário: Todos</div>
+          <div class="ms-panel"></div>
+        </div>
+        <div class="multi-select" data-ms="local" data-label="Local">
+          <div class="ms-trigger" tabindex="0">Local: Todos</div>
+          <div class="ms-panel"></div>
+        </div>
+        <div class="multi-select" data-ms="creator" data-label="Criador">
+          <div class="ms-trigger" tabindex="0">Criador: Todos</div>
+          <div class="ms-panel"></div>
+        </div>
+        <div class="multi-select" data-ms="current" data-label="Usuário Atual">
+          <div class="ms-trigger" tabindex="0">Usuário Atual: Todos</div>
+          <div class="ms-panel"></div>
+        </div>
+        <label class="filter-chip" id="chip-orfaos">
+          <input type="checkbox" id="f-orfaos"> Só órfãos
+        </label>
+        <label class="filter-chip" id="chip-transf">
+          <input type="checkbox" id="f-transferred"> Transferidos
+        </label>
+        <input type="text" id="admin-search" placeholder="🔍 Pesquisar por ID, Data, etc...">
+        <button class="btn btn-outline" onclick="clearFilters()" title="Limpar todos os filtros">🧹 Limpar</button>
+        <div id="result-count"></div>
       </div>
       <div style="overflow-x:auto;">
         <table id="admin-table">
@@ -248,14 +437,15 @@
               <th style="cursor:pointer;" onclick="sortAdminData('form')">Formulário ⇅</th>
               <th style="cursor:pointer;" onclick="sortAdminData('local')">Local ⇅</th>
               <th style="cursor:pointer;" onclick="sortAdminData('status')">Status ⇅</th>
-              <th style="cursor:pointer;" onclick="sortAdminData('user')">Usuário (Criador) ⇅</th>
+              <th style="cursor:pointer;" onclick="sortAdminData('creator')">Criador ⇅</th>
+              <th style="cursor:pointer;" onclick="sortAdminData('user')">Usuário Atual ⇅</th>
               <th style="text-align:right; white-space:nowrap;">Ações</th>
             </tr>
           </thead>
 
           <tbody id="admin-tbody">
             <tr>
-              <td colspan="6" style="text-align:center; padding:20px;">Carregando dados...</td>
+              <td colspan="9" style="text-align:center; padding:20px;">Carregando dados...</td>
             </tr>
           </tbody>
         </table>
@@ -320,6 +510,9 @@
       }
 
       document.getElementById('admin-user').innerText = user.email;
+      // Restaurar estado dos filtros ANTES de carregar dados (para sortCol/sortAsc)
+      applyFiltersToUI(loadSavedFilters());
+      bindFilterListeners();
       loadAdminData();
       loadAccessRequests();
     });
@@ -332,6 +525,182 @@
     let sortCol = 'date';
     let sortAsc = false;
 
+    // ──────────── FILTROS PERSISTENTES ────────────
+    const FILTERS_KEY = 'ate-admin-filters';
+    const MULTI_KEYS = ['form', 'local', 'creator', 'current'];
+    // Estado dos multi-selects: arrays de valores selecionados
+    let msState = { form: [], local: [], creator: [], current: [] };
+
+    function getFilterState() {
+      return {
+        search: document.getElementById('admin-search')?.value || '',
+        status: document.getElementById('f-status')?.value || '',
+        form: [...msState.form],
+        local: [...msState.local],
+        creator: [...msState.creator],
+        current: [...msState.current],
+        orfaos: document.getElementById('f-orfaos')?.checked || false,
+        transferred: document.getElementById('f-transferred')?.checked || false,
+        sortCol, sortAsc
+      };
+    }
+
+    function saveFilters() {
+      try { localStorage.setItem(FILTERS_KEY, JSON.stringify(getFilterState())); } catch (_) {}
+    }
+
+    function applyFiltersToUI(state) {
+      if (!state) return;
+      const set = (id, v) => { const el = document.getElementById(id); if (el) el.value = v ?? ''; };
+      const check = (id, v) => { const el = document.getElementById(id); if (el) el.checked = !!v; };
+      set('admin-search', state.search);
+      set('f-status', state.status);
+      MULTI_KEYS.forEach(k => {
+        msState[k] = Array.isArray(state[k]) ? state[k].slice() : [];
+      });
+      check('f-orfaos', state.orfaos);
+      check('f-transferred', state.transferred);
+      if (state.sortCol) sortCol = state.sortCol;
+      if (typeof state.sortAsc === 'boolean') sortAsc = state.sortAsc;
+      MULTI_KEYS.forEach(renderMultiSelectPanel);
+      MULTI_KEYS.forEach(updateMultiSelectTrigger);
+    }
+
+    function loadSavedFilters() {
+      try {
+        const raw = localStorage.getItem(FILTERS_KEY);
+        return raw ? JSON.parse(raw) : null;
+      } catch (_) { return null; }
+    }
+
+    // Valores únicos disponíveis por chave (derivado de allAdminData)
+    function uniqueValuesFor(key) {
+      const mapper = key === 'form' ? d => d.form
+                  : key === 'local' ? d => d.local
+                  : key === 'creator' ? d => d.creator
+                  : d => d.userEmail;
+      const all = allAdminData.map(mapper)
+        .filter(v => v && v !== '(sem dono)' && v !== 'Desconhecido');
+      return Array.from(new Set(all)).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+    }
+
+    function renderMultiSelectPanel(key) {
+      const wrapper = document.querySelector(`.multi-select[data-ms="${key}"]`);
+      if (!wrapper) return;
+      const panel = wrapper.querySelector('.ms-panel');
+      const values = uniqueValuesFor(key);
+      const selected = new Set(msState[key]);
+      if (values.length === 0) {
+        panel.innerHTML = '<div class="ms-empty">Nenhum valor disponível</div>';
+        return;
+      }
+      panel.innerHTML = values.map(v => {
+        const checked = selected.has(v) ? 'checked' : '';
+        const safe = String(v).replace(/"/g, '&quot;');
+        return `<label class="ms-option">
+          <input type="checkbox" value="${safe}" ${checked}>
+          <span class="ms-option-label" title="${safe}">${v}</span>
+        </label>`;
+      }).join('');
+      panel.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+        cb.addEventListener('change', () => {
+          const val = cb.value;
+          if (cb.checked) {
+            if (!msState[key].includes(val)) msState[key].push(val);
+          } else {
+            msState[key] = msState[key].filter(x => x !== val);
+          }
+          updateMultiSelectTrigger(key);
+          saveFilters();
+          renderAdminTable();
+        });
+      });
+    }
+
+    function updateMultiSelectTrigger(key) {
+      const wrapper = document.querySelector(`.multi-select[data-ms="${key}"]`);
+      if (!wrapper) return;
+      const trigger = wrapper.querySelector('.ms-trigger');
+      const label = wrapper.dataset.label || key;
+      const sel = msState[key];
+      let txt;
+      if (!sel || sel.length === 0) txt = `${label}: Todos`;
+      else if (sel.length === 1) txt = `${label}: ${sel[0]}`;
+      else txt = `${label}: ${sel.length} selecionados`;
+      trigger.textContent = txt;
+      trigger.title = sel && sel.length ? sel.join(', ') : '';
+      wrapper.classList.toggle('active', sel && sel.length > 0);
+    }
+
+    function bindMultiSelects() {
+      document.querySelectorAll('.multi-select').forEach(ms => {
+        const trigger = ms.querySelector('.ms-trigger');
+        trigger.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const isOpen = ms.classList.contains('open');
+          document.querySelectorAll('.multi-select.open').forEach(o => o.classList.remove('open'));
+          if (!isOpen) ms.classList.add('open');
+        });
+      });
+      document.addEventListener('click', (e) => {
+        if (!e.target.closest('.multi-select')) {
+          document.querySelectorAll('.multi-select.open').forEach(o => o.classList.remove('open'));
+        }
+      });
+    }
+
+    function populateFilterOptions() {
+      MULTI_KEYS.forEach(k => {
+        // Saneia seleção: remove valores que não existem mais nos dados
+        const valid = new Set(uniqueValuesFor(k));
+        msState[k] = msState[k].filter(v => valid.has(v));
+        renderMultiSelectPanel(k);
+        updateMultiSelectTrigger(k);
+      });
+    }
+
+    function clearFilters() {
+      MULTI_KEYS.forEach(k => { msState[k] = []; });
+      const set = (id, v) => { const el = document.getElementById(id); if (el) el.value = v; };
+      const check = (id, v) => { const el = document.getElementById(id); if (el) el.checked = v; };
+      set('admin-search', '');
+      set('f-status', '');
+      check('f-orfaos', false);
+      check('f-transferred', false);
+      sortCol = 'date';
+      sortAsc = false;
+      MULTI_KEYS.forEach(renderMultiSelectPanel);
+      MULTI_KEYS.forEach(updateMultiSelectTrigger);
+      saveFilters();
+      renderAdminTable();
+    }
+
+    function updateActiveFilterStyles() {
+      const state = getFilterState();
+      const mark = (id, active) => {
+        const el = document.getElementById(id);
+        if (el) el.classList.toggle('active', !!active);
+      };
+      mark('admin-search', state.search);
+      mark('f-status', state.status);
+      document.getElementById('chip-orfaos')?.classList.toggle('active', state.orfaos);
+      document.getElementById('chip-transf')?.classList.toggle('active', state.transferred);
+      // multi-selects já cuidam do próprio .active via updateMultiSelectTrigger
+    }
+
+    function bindFilterListeners() {
+      ['admin-search', 'f-status', 'f-orfaos', 'f-transferred'].forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        const ev = (el.type === 'text') ? 'input' : 'change';
+        el.addEventListener(ev, () => {
+          saveFilters();
+          renderAdminTable();
+        });
+      });
+      bindMultiSelects();
+    }
+
     // LOAD DATA
     async function loadAdminData() {
       const tbody = document.getElementById('admin-tbody');
@@ -340,7 +709,7 @@
       try {
         const snapshot = await db.collection('formularios-ate').orderBy('createdAt', 'desc').get();
         if (snapshot.empty) {
-          tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:20px;">Nenhum formulário encontrado no banco de dados.</td></tr>';
+          tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; padding:20px;">Nenhum formulário encontrado no banco de dados.</td></tr>';
           return;
         }
 
@@ -380,6 +749,8 @@
             }
           }
 
+          const creator = data.createdBy || data.userEmail || 'Desconhecido';
+          const currentOwner = data.userEmail || '(sem dono)';
           allAdminData.push({
             id: doc.id,
             form: data.formLabel || data.formType || 'Desconhecido',
@@ -389,31 +760,56 @@
             createdAtStr: createdDataStr,
             createdAtObj: createdDateObj.getTime(),
             local: localStr,
-            userEmail: data.userEmail || 'Desconhecido'
+            userEmail: currentOwner,
+            creator: creator,
+            ownershipHistory: Array.isArray(data.ownershipHistory) ? data.ownershipHistory : []
           });
         });
+        populateFilterOptions();
+        applyFiltersToUI(loadSavedFilters());
         renderAdminTable();
 
 
       } catch (e) {
         console.error("Erro ao carregar painel admin:", e);
-        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:20px; color:var(--warn);">Erro ao buscar dados do Firebase. Verifique sua conexão.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; padding:20px; color:var(--warn);">Erro ao buscar dados do Firebase. Verifique sua conexão.</td></tr>';
       }
     }
 
     function renderAdminTable() {
       const tbody = document.getElementById('admin-tbody');
-      const searchTxt = (document.getElementById('admin-search')?.value || '').toLowerCase();
+      const state = getFilterState();
+      const searchTxt = state.search.toLowerCase();
 
       let filtered = allAdminData.filter(d => {
-        return d.id.toLowerCase().includes(searchTxt) ||
-          d.form.toLowerCase().includes(searchTxt) ||
-          d.dateStr.toLowerCase().includes(searchTxt) ||
-          d.createdAtStr.toLowerCase().includes(searchTxt) ||
-          d.local.toLowerCase().includes(searchTxt) ||
-          d.status.toLowerCase().includes(searchTxt) ||
-          d.userEmail.toLowerCase().includes(searchTxt);
+        if (state.status && d.status !== state.status) return false;
+        if (state.form.length && !state.form.includes(d.form)) return false;
+        if (state.local.length && !state.local.includes(d.local)) return false;
+        if (state.creator.length && !state.creator.includes(d.creator)) return false;
+        if (state.current.length && !state.current.includes(d.userEmail)) return false;
+        if (state.orfaos && d.userEmail !== '(sem dono)') return false;
+        if (state.transferred && !(d.ownershipHistory && d.ownershipHistory.length > 0)) return false;
+        if (searchTxt) {
+          const hit = d.id.toLowerCase().includes(searchTxt) ||
+            d.form.toLowerCase().includes(searchTxt) ||
+            d.dateStr.toLowerCase().includes(searchTxt) ||
+            d.createdAtStr.toLowerCase().includes(searchTxt) ||
+            d.local.toLowerCase().includes(searchTxt) ||
+            d.status.toLowerCase().includes(searchTxt) ||
+            d.userEmail.toLowerCase().includes(searchTxt) ||
+            (d.creator || '').toLowerCase().includes(searchTxt);
+          if (!hit) return false;
+        }
+        return true;
       });
+
+      updateActiveFilterStyles();
+      const counter = document.getElementById('result-count');
+      if (counter) {
+        const hasFilter = !!(state.search || state.status || state.form.length || state.local.length || state.creator.length || state.current.length || state.orfaos || state.transferred);
+        counter.textContent = `Exibindo ${filtered.length} de ${allAdminData.length}`;
+        counter.classList.toggle('filtered', hasFilter);
+      }
 
       filtered.sort((a, b) => {
         let valA, valB;
@@ -424,6 +820,7 @@
         else if (sortCol === 'local') { valA = a.local; valB = b.local; }
         else if (sortCol === 'status') { valA = a.status; valB = b.status; }
         else if (sortCol === 'user') { valA = a.userEmail; valB = b.userEmail; }
+        else if (sortCol === 'creator') { valA = a.creator; valB = b.creator; }
 
         if (valA < valB) return sortAsc ? -1 : 1;
         if (valA > valB) return sortAsc ? 1 : -1;
@@ -431,7 +828,7 @@
       });
 
       if (filtered.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:20px;">Nenhum registro encontrado.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; padding:20px;">Nenhum registro encontrado.</td></tr>';
         return;
       }
 
@@ -446,6 +843,22 @@
         }
         actions += ` <button class="btn" style="margin-left:8px; background:var(--warn); color:white; border:none;" onclick="deleteSession('${d.id}')">Excluir</button>`;
 
+        const transferred = d.creator && d.userEmail && d.creator !== d.userEmail;
+        let historyTooltip = '';
+        let historyIcon = '';
+        if (d.ownershipHistory && d.ownershipHistory.length > 0) {
+          const lines = d.ownershipHistory.map((h, i) => {
+            const at = h.at && h.at.toDate ? h.at.toDate().toLocaleString('pt-BR')
+              : (h.at && h.at.seconds ? new Date(h.at.seconds * 1000).toLocaleString('pt-BR') : '');
+            return `${i + 1}. ${h.from || '(órfão)'} → ${h.to} ${at ? '[' + at + ']' : ''}`;
+          });
+          historyTooltip = 'Histórico de transferências:\n' + lines.join('\n');
+          historyIcon = `<span title="${historyTooltip.replace(/"/g, '&quot;')}" style="cursor:help; margin-left:4px;">🔄${d.ownershipHistory.length}</span>`;
+        }
+        const currentCellStyle = transferred
+          ? 'font-size:11px; color:var(--cemig-blue); font-weight:600; max-width:170px; overflow:hidden; text-overflow:ellipsis;'
+          : 'font-size:11px; color:var(--text-light); max-width:170px; overflow:hidden; text-overflow:ellipsis;';
+
         html += `
           <tr>
             <td>${d.createdAtStr}</td>
@@ -454,7 +867,8 @@
             <td>${d.form}</td>
             <td>${d.local}</td>
             <td style="color:${statusColor}; font-weight:600;">${statusText}</td>
-            <td style="font-size:11px; color:var(--text-light); max-width:150px; overflow:hidden; text-overflow:ellipsis;" title="${d.userEmail}">${d.userEmail}</td>
+            <td style="font-size:11px; color:var(--text-light); max-width:150px; overflow:hidden; text-overflow:ellipsis;" title="${d.creator}">${d.creator}</td>
+            <td style="${currentCellStyle}" title="${d.userEmail}">${d.userEmail}${historyIcon}</td>
             <td style="text-align:right; white-space:nowrap;">${actions}</td>
           </tr>
         `;
@@ -473,6 +887,7 @@
         sortCol = col;
         sortAsc = true;
       }
+      saveFilters();
       renderAdminTable();
     }
 
