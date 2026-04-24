@@ -944,10 +944,17 @@
       justify-content: space-between;
       background: white;
       border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 10px 14px;
+      border-radius: 8px;
+      padding: 14px 18px;
       gap: 12px;
       flex-wrap: wrap;
+      transition: all 0.2s ease;
+    }
+
+    .history-item:hover {
+      border-color: var(--cemig-light);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      transform: translateY(-1px);
     }
 
     .history-item .hi-id {
@@ -961,22 +968,35 @@
     .history-item .hi-center {
       flex: 1;
       min-width: 0;
+      text-align: center;
     }
 
     .history-item .hi-meta {
-      font-size: 11px;
+      font-size: 12px;
       color: var(--text-light);
+      line-height: 1.5;
+    }
+
+    .hi-local {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      margin: 4px 0 2px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      justify-content: center;
     }
 
     .hi-status {
       display: inline-block;
-      padding: 2px 8px;
-      border-radius: 4px;
+      padding: 2px 10px;
+      border-radius: 20px;
       font-size: 10px;
       font-weight: 700;
       letter-spacing: 0.3px;
       text-transform: uppercase;
-      margin-bottom: 2px;
+      margin-bottom: 6px;
     }
 
     .hi-status.em-andamento {
@@ -4644,10 +4664,12 @@
           <div class="hi-id">${h.id}</div>
           <div class="hi-center">
             <span class="hi-status ${statusClass}">${statusLabel}</span>
-            <div class="hi-meta" style="line-height:1.4; margin-top:4px;">
-              <strong>${h.formLabel || h.formType}</strong><br>
-              Local: ${h.localStr}<br>
-              Criado em: ${h.createdDateStr} · Atualizado: ${h.dateStr}
+            <div class="hi-meta">
+              <strong>${h.formLabel || h.formType}</strong>
+              <div class="hi-local">${h.localStr}</div>
+              <div style="font-size: 11px; opacity: 0.8; margin-top: 2px;">
+                Criado em: ${h.createdDateStr} · Atualizado: ${h.dateStr}
+              </div>
             </div>
           </div>
           <div class="hi-btns">
