@@ -1303,6 +1303,13 @@
       <!-- LOCAL E DATA -->
       <div class="card">
         <div class="section-title">Identificação da Base Operativa / Local</div>
+        <div class="grid g2" style="margin-bottom:10px;">
+          <div class="field">
+            <label>N° do Contrato <span style="color:var(--warn);">*</span></label>
+            <input type="text" inputmode="numeric" maxlength="10" minlength="10" pattern="\d{10}"
+              class="contrato-input" data-field="infra-num-contrato" placeholder="10 dígitos numéricos">
+          </div>
+        </div>
         <div class="grid g2" style="align-items:center;">
           <div class="field">
             <label>Local da Inspeção</label>
@@ -1478,6 +1485,13 @@
       <!-- LOCAL E DATA -->
       <div class="card">
         <div class="section-title">Identificação da Base Operativa / Local</div>
+        <div class="grid g2" style="margin-bottom:10px;">
+          <div class="field">
+            <label>N° do Contrato <span style="color:var(--warn);">*</span></label>
+            <input type="text" inputmode="numeric" maxlength="10" minlength="10" pattern="\d{10}"
+              class="contrato-input" data-field="almox-num-contrato" placeholder="10 dígitos numéricos">
+          </div>
+        </div>
         <div class="grid g2" style="align-items:center;">
           <div class="field">
             <label>Local da Inspeção</label>
@@ -1672,6 +1686,13 @@
 
       <!-- LOCAL E DATA -->
       <div class="card">
+        <div class="grid g2" style="margin-bottom:10px;">
+          <div class="field">
+            <label>N° do Contrato <span style="color:var(--warn);">*</span></label>
+            <input type="text" inputmode="numeric" maxlength="10" minlength="10" pattern="\d{10}"
+              class="contrato-input" data-field="moto-num-contrato" placeholder="10 dígitos numéricos">
+          </div>
+        </div>
         <div class="grid g2">
           <div class="field">
             <label>Local da Inspeção</label>
@@ -1891,6 +1912,13 @@
 
       <!-- LOCAL E DATA ES2 -->
       <div class="card">
+        <div class="grid g2" style="margin-bottom:10px;">
+          <div class="field">
+            <label>N° do Contrato <span style="color:var(--warn);">*</span></label>
+            <input type="text" inputmode="numeric" maxlength="10" minlength="10" pattern="\d{10}"
+              class="contrato-input" data-field="es2-num-contrato" placeholder="10 dígitos numéricos">
+          </div>
+        </div>
         <div class="grid g2">
           <div class="field">
             <label>Local da Inspeção</label>
@@ -2166,6 +2194,13 @@
 
       <!-- LOCAL E DATA EL2 -->
       <div class="card">
+        <div class="grid g2" style="margin-bottom:10px;">
+          <div class="field">
+            <label>N° do Contrato <span style="color:var(--warn);">*</span></label>
+            <input type="text" inputmode="numeric" maxlength="10" minlength="10" pattern="\d{10}"
+              class="contrato-input" data-field="el2-num-contrato" placeholder="10 dígitos numéricos">
+          </div>
+        </div>
         <div class="grid g2">
           <div class="field">
             <label>Local da Inspeção</label>
@@ -2425,6 +2460,13 @@
       <!-- CABEÇALHO -->
       <div class="card">
         <div class="section-title">Identificação</div>
+        <div class="grid g2" style="margin-bottom:12px;">
+          <div class="field">
+            <label>N° do Contrato <span style="color:var(--warn);">*</span></label>
+            <input type="text" inputmode="numeric" maxlength="10" minlength="10" pattern="\d{10}"
+              class="contrato-input" data-field="amb-num-contrato" placeholder="10 dígitos numéricos">
+          </div>
+        </div>
         <div class="grid g2" style="margin-bottom:12px;">
           <div class="field"><label>Contratada</label><input type="text" data-field="amb-contratada"></div>
           <div class="field">
@@ -3646,6 +3688,27 @@
       return true;
     }
 
+    function validateContrato(formId) {
+      const input = document.querySelector('#form-' + formId + ' input.contrato-input');
+      if (!input) return true;
+      const val = (input.value || '').trim();
+      if (!/^\d{10}$/.test(val)) {
+        input.focus();
+        alert('Informe o N° do Contrato (exatamente 10 dígitos numéricos) antes de finalizar.');
+        return false;
+      }
+      return true;
+    }
+
+    // Filtro em tempo real: aceita somente dígitos no campo N° do Contrato
+    document.addEventListener('input', (e) => {
+      const el = e.target;
+      if (el && el.classList && el.classList.contains('contrato-input')) {
+        const cleaned = el.value.replace(/\D+/g, '').slice(0, 10);
+        if (cleaned !== el.value) el.value = cleaned;
+      }
+    });
+
     function exportPDF() {
       if (!validateFormNC(currentFormType)) return;
       showExportOverlay('Gerando PDF... Aguarde.');
@@ -4520,6 +4583,7 @@
         return;
       }
       if (!validateFormNC(currentFormType)) return;
+      if (!validateContrato(currentFormType)) return;
       const confirma = confirm('Deseja realmente FINALIZAR este formulário?\n\nApós finalizado, o status será alterado para "Concluído" e os campos ficarão bloqueados para edição.');
       if (!confirma) return;
 
