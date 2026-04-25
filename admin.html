@@ -363,6 +363,13 @@
       font-size: 12px;
     }
 
+    .bulk-bar .btn[disabled],
+    .bulk-bar .btn.disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+      pointer-events: auto;
+    }
+
     .row-check,
     .header-check {
       width: 32px;
@@ -462,6 +469,7 @@
       <div id="bulk-bar" class="bulk-bar">
         <span class="bulk-count" id="bulk-count">0 selecionados</span>
         <button class="btn btn-outline" onclick="bulkReopen()">↻ Reabrir</button>
+        <button class="btn" id="bulk-compile-btn" style="background:var(--cemig-blue); color:white;" onclick="bulkCompilar()">📑 Compilar PDF</button>
         <button class="btn" style="background:var(--warn); color:white;" onclick="bulkDelete()">🗑 Excluir</button>
         <button class="btn btn-outline" style="margin-left:auto;" onclick="clearSelection()">✕ Limpar seleção</button>
       </div>
@@ -786,9 +794,13 @@
 
           const creator = data.createdBy || data.userEmail || 'Desconhecido';
           const currentOwner = data.userEmail || '(sem dono)';
+          const rawFormType = data.formType || '';
+          const contrato = (data.data && rawFormType) ? (data.data[rawFormType + '-num-contrato'] || '') : '';
           allAdminData.push({
             id: doc.id,
             form: data.formLabel || data.formType || 'Desconhecido',
+            formType: rawFormType,
+            contrato: contrato,
             status: data.status || 'em_andamento',
             dateStr: dataStr,
             dateObj: dateObj.getTime(),
@@ -950,6 +962,7 @@
       const n = selectedIds.size;
       bar.classList.toggle('visible', n > 0);
       count.textContent = `${n} ${n === 1 ? 'selecionado' : 'selecionados'}`;
+      updateBulkCompileState();
     }
 
     function updateSelectAllState() {
@@ -1075,6 +1088,70 @@
       alert(msg);
       selectedIds.clear();
       loadAdminData();
+    }
+
+    // ──────────── COMPILAR PDF (validação + abertura) ────────────
+    function evaluateCompileSelection() {
+      const ids = Array.from(selectedIds);
+      if (ids.length === 0) {
+        return { ok: false, reason: 'Selecione ao menos um formulário para compilar.' };
+      }
+      const idToData = new Map(allAdminData.map(d => [d.id, d]));
+      const rows = ids.map(id => idToData.get(id)).filter(Boolean);
+      if (rows.length !== ids.length) {
+        return { ok: false, reason: 'Alguns formulários selecionados não foram encontrados — atualize a lista.' };
+      }
+
+      const naoConcluidos = rows.filter(r => r.status !== 'concluido');
+      if (naoConcluidos.length) {
+        return {
+          ok: false,
+          reason: `Apenas formulários concluídos podem ser compilados — ${naoConcluidos.length} ${naoConcluidos.length === 1 ? 'está' : 'estão'} em andamento na seleção.`
+        };
+      }
+
+      const tipos = Array.from(new Set(rows.map(r => r.formType).filter(Boolean)));
+      if (tipos.length !== 1) {
+        return {
+          ok: false,
+          reason: `Todos devem ser do mesmo tipo (selecionados: ${tipos.length} tipos diferentes).`
+        };
+      }
+
+      const contratos = Array.from(new Set(rows.map(r => r.contrato).filter(Boolean)));
+      if (contratos.length !== 1) {
+        const desc = contratos.length === 0
+          ? 'nenhum dos formulários tem N° de Contrato preenchido'
+          : `selecionados: ${contratos.length} contratos diferentes`;
+        return { ok: false, reason: `Todos devem ter o mesmo N° de Contrato (${desc}).` };
+      }
+
+      return { ok: true, ids };
+    }
+
+    function updateBulkCompileState() {
+      const btn = document.getElementById('bulk-compile-btn');
+      if (!btn) return;
+      const result = evaluateCompileSelection();
+      if (result.ok) {
+        btn.classList.remove('disabled');
+        btn.removeAttribute('disabled');
+        btn.title = `Gerar PDF compilado de ${result.ids.length} ${result.ids.length === 1 ? 'formulário' : 'formulários'}`;
+      } else {
+        btn.classList.add('disabled');
+        btn.setAttribute('disabled', 'disabled');
+        btn.title = `⚠ ${result.reason}`;
+      }
+    }
+
+    function bulkCompilar() {
+      const result = evaluateCompileSelection();
+      if (!result.ok) {
+        alert('Não é possível compilar:\n\n' + result.reason);
+        return;
+      }
+      const url = `compilado.html?ids=${encodeURIComponent(result.ids.join(','))}`;
+      window.open(url, '_blank');
     }
 
     async function reopenSession(sessionId) {
