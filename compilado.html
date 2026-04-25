@@ -1,0 +1,1330 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Compilado ATE – CEMIG</title>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="constants.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+    :root {
+      --cemig-blue: #00a651;
+      --cemig-light: #8cc63f;
+      --accent: #e8a900;
+      --border: #b0bec5;
+      --bg: #f4f6f9;
+      --bg-section: #ffffff;
+      --text: #1a2332;
+      --text-light: #546e7a;
+      --ok: #2e7d32;
+      --warn: #c62828;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'IBM Plex Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    .status-screen {
+      max-width: 720px;
+      margin: 80px auto;
+      padding: 32px;
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+
+    .status-screen h1 {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      color: var(--cemig-blue);
+    }
+
+    .status-screen p {
+      font-size: 13px;
+      color: var(--text-light);
+      margin-bottom: 8px;
+    }
+
+    .status-screen .err {
+      color: var(--warn);
+      background: #ffebee;
+      border: 1px solid var(--warn);
+      padding: 12px 14px;
+      border-radius: 4px;
+      margin-top: 12px;
+      font-size: 13px;
+    }
+
+    .status-screen .ok {
+      color: var(--ok);
+      background: #e8f5e9;
+      border: 1px solid var(--ok);
+      padding: 12px 14px;
+      border-radius: 4px;
+      margin-top: 12px;
+      font-size: 13px;
+    }
+
+    .status-screen ul {
+      margin: 8px 0 8px 24px;
+      font-size: 12px;
+      color: var(--text-light);
+    }
+
+    .status-screen .actions {
+      margin-top: 20px;
+      display: flex;
+      gap: 10px;
+    }
+
+    .btn {
+      padding: 8px 16px;
+      border-radius: 4px;
+      font-family: 'IBM Plex Sans', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+    }
+
+    .btn-primary {
+      background: var(--cemig-blue);
+      color: white;
+    }
+
+    .btn-outline {
+      background: white;
+      color: var(--cemig-blue);
+      border: 1px solid var(--border);
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border: 2px solid var(--border);
+      border-top-color: var(--cemig-blue);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      vertical-align: middle;
+      margin-right: 6px;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    /* ───────── COMPILADO ───────── */
+    .compilado {
+      max-width: 880px;
+      margin: 24px auto;
+      padding: 0 16px 60px;
+    }
+
+    .comp-header {
+      background: var(--cemig-blue);
+      color: white;
+      padding: 22px 28px;
+      border-radius: 8px 8px 0 0;
+      display: flex;
+      align-items: center;
+      gap: 24px;
+    }
+
+    .comp-logo {
+      width: 72px;
+      height: 72px;
+      background: white;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'IBM Plex Mono', monospace;
+      font-weight: 700;
+      font-size: 22px;
+      color: var(--cemig-blue);
+      letter-spacing: -1px;
+      flex-shrink: 0;
+    }
+
+    .comp-header h1 {
+      font-size: 12px;
+      font-weight: 400;
+      opacity: 0.85;
+      letter-spacing: 0.3px;
+      text-transform: uppercase;
+    }
+
+    .comp-header h2 {
+      font-size: 20px;
+      font-weight: 700;
+      margin-top: 4px;
+    }
+
+    .comp-header .meta {
+      margin-top: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 0.2px;
+      line-height: 1.5;
+    }
+
+    .comp-card {
+      background: white;
+      border: 1px solid var(--border);
+      border-top: none;
+      padding: 22px 26px;
+      border-radius: 0 0 8px 8px;
+    }
+
+    .comp-cover-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--cemig-blue);
+      margin-bottom: 12px;
+      padding-bottom: 6px;
+      border-bottom: 2px solid var(--cemig-blue);
+    }
+
+    .comp-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    .comp-table thead tr {
+      background: var(--cemig-blue);
+      color: white;
+    }
+
+    .comp-table th {
+      padding: 8px 10px;
+      text-align: left;
+      font-weight: 600;
+      font-size: 11px;
+      letter-spacing: 0.3px;
+    }
+
+    .comp-table tbody tr:nth-child(even) {
+      background: #f4f6f9;
+    }
+
+    .comp-table td {
+      padding: 8px 10px;
+      border-bottom: 1px solid #dde3ec;
+      vertical-align: middle;
+    }
+
+    .comp-table .num {
+      width: 36px;
+      text-align: center;
+      font-weight: 600;
+      color: var(--text-light);
+    }
+
+    .comp-table .id {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 11px;
+    }
+
+    .comp-table .pend {
+      text-align: center;
+      font-weight: 700;
+    }
+
+    .comp-table .pend.zero {
+      color: var(--ok);
+    }
+
+    .comp-table .pend.has {
+      color: var(--warn);
+    }
+
+    .comp-footer {
+      margin-top: 20px;
+      font-size: 11px;
+      color: var(--text-light);
+      text-align: right;
+    }
+
+    /* ───────── PER-FORM ───────── */
+    .form-block {
+      margin-top: 20px;
+      page-break-before: always;
+    }
+
+    .form-block .sub-header {
+      background: #1a2332;
+      color: white;
+      padding: 14px 20px;
+      border-radius: 6px 6px 0 0;
+      font-size: 13px;
+    }
+
+    .form-block .sub-header .sh-title {
+      font-size: 15px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .form-block .sub-header .sh-meta {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4px 18px;
+      font-size: 12px;
+      opacity: 0.95;
+    }
+
+    .form-block .sub-header .sh-meta strong {
+      font-weight: 600;
+    }
+
+    .form-block .form-card {
+      background: white;
+      border: 1px solid var(--border);
+      border-top: none;
+      padding: 18px 22px;
+      border-radius: 0 0 6px 6px;
+    }
+
+    .section-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--cemig-blue);
+      margin: 16px 0 8px;
+      padding-bottom: 4px;
+      border-bottom: 1px solid var(--cemig-blue);
+    }
+
+    .section-title:first-child {
+      margin-top: 0;
+    }
+
+    .section-empty {
+      font-size: 12px;
+      color: var(--text-light);
+      font-style: italic;
+      padding: 6px 0;
+    }
+
+    .components-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      margin-top: 4px;
+    }
+
+    .components-table th,
+    .components-table td {
+      padding: 6px 8px;
+      border: 1px solid #dde3ec;
+      text-align: left;
+    }
+
+    .components-table th {
+      background: #eef2f7;
+      font-weight: 600;
+      font-size: 11px;
+    }
+
+    .nc-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    .nc-table thead tr {
+      background: var(--cemig-blue);
+      color: white;
+    }
+
+    .nc-table th {
+      padding: 8px 10px;
+      text-align: left;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .nc-table td {
+      padding: 8px 10px;
+      border-bottom: 1px solid #dde3ec;
+      vertical-align: top;
+    }
+
+    .nc-table td.item-num {
+      width: 44px;
+      text-align: center;
+      font-weight: 700;
+      color: var(--text-light);
+    }
+
+    .nc-table th.item-num {
+      width: 44px;
+      text-align: center;
+      color: white;
+    }
+
+    .nc-table .obs {
+      color: var(--text);
+      white-space: pre-wrap;
+    }
+
+    @media print {
+      body {
+        background: white;
+      }
+
+      .status-screen {
+        display: none;
+      }
+
+      .compilado {
+        max-width: 100%;
+        margin: 0;
+        padding: 0;
+      }
+
+      .comp-header {
+        border-radius: 0;
+      }
+
+      .comp-card {
+        border-radius: 0;
+        border: none;
+      }
+
+      .no-print {
+        display: none !important;
+      }
+
+      .page-break {
+        page-break-before: always;
+      }
+
+      @page {
+        margin: 14mm;
+      }
+
+      /* Força impressão de cores de fundo (cabeçalhos verde/preto) */
+      .comp-header,
+      .comp-table thead tr,
+      .nc-table thead tr,
+      .components-table th,
+      .form-block .sub-header,
+      .comp-table tbody tr:nth-child(even),
+      .form-block,
+      .pend.zero,
+      .pend.has,
+      .section-title {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        color-adjust: exact !important;
+      }
+    }
+
+    /* Aplica também em screen para alguns elementos que devem manter cor mesmo em preview */
+    .comp-header,
+    .form-block .sub-header,
+    .comp-table thead tr,
+    .nc-table thead tr {
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="status" class="status-screen">
+    <h1>Compilado ATE</h1>
+    <p id="status-msg"><span class="spinner"></span> Inicializando...</p>
+    <div id="status-detail"></div>
+    <div class="actions" id="status-actions" style="display:none;">
+      <button class="btn btn-outline" onclick="window.close()">Fechar</button>
+      <button class="btn btn-primary" onclick="window.location.href='admin.html'">Voltar ao Admin</button>
+    </div>
+  </div>
+
+  <div id="compilado" class="compilado" style="display:none;"></div>
+
+  <script>
+    // ──────────── FIREBASE ────────────
+    const firebaseConfig = {
+      apiKey: "AIzaSyCRwxQmL2ViAXvw7bBKMZLY9e1SUvsDiGY",
+      authDomain: "formularios-ate-cemig.firebaseapp.com",
+      projectId: "formularios-ate-cemig",
+      storageBucket: "formularios-ate-cemig.firebasestorage.app",
+      messagingSenderId: "586943089340",
+      appId: "1:586943089340:web:2c3f453540a4e7d2615eb9"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const auth = firebase.auth();
+
+    // ──────────── HELPERS DE STATUS ────────────
+    function setStatus(msg, opts = {}) {
+      const m = document.getElementById('status-msg');
+      m.innerHTML = (opts.spinner ? '<span class="spinner"></span> ' : '') + msg;
+    }
+
+    function showError(title, lines = []) {
+      const detail = document.getElementById('status-detail');
+      const list = lines.length ? '<ul>' + lines.map(l => `<li>${l}</li>`).join('') + '</ul>' : '';
+      detail.innerHTML = `<div class="err"><strong>${title}</strong>${list}</div>`;
+      document.getElementById('status-actions').style.display = 'flex';
+      setStatus('Não foi possível gerar o compilado.');
+    }
+
+    function showOk(title, lines = []) {
+      const detail = document.getElementById('status-detail');
+      const list = lines.length ? '<ul>' + lines.map(l => `<li>${l}</li>`).join('') + '</ul>' : '';
+      detail.innerHTML = `<div class="ok"><strong>${title}</strong>${list}</div>`;
+    }
+
+    // ──────────── AUTH ────────────
+    auth.onAuthStateChanged(user => {
+      if (!user) {
+        window.location.href = 'login.html';
+        return;
+      }
+      runCompilado();
+    });
+
+    // ──────────── FLUXO PRINCIPAL ────────────
+    const FORM_LABELS = {
+      infra: 'Infraestrutura Administrativa',
+      almox: 'Almoxarifado',
+      moto: 'Equipes de Motociclistas',
+      es2: 'Multifuncional ES2',
+      el2: 'Multifuncional EL2',
+      amb: 'Parte Ambiental'
+    };
+
+    async function runCompilado() {
+      const params = new URLSearchParams(window.location.search);
+      const idsParam = (params.get('ids') || '').trim();
+      if (!idsParam) {
+        showError('Nenhum ID informado.', ['Use o painel administrativo para selecionar formulários e gerar o compilado.']);
+        return;
+      }
+      const ids = idsParam.split(',').map(s => s.trim().toUpperCase()).filter(Boolean);
+      if (ids.length === 0) {
+        showError('Lista de IDs vazia.');
+        return;
+      }
+      // Remove duplicados preservando ordem
+      const uniqueIds = Array.from(new Set(ids));
+
+      setStatus(`Buscando ${uniqueIds.length} formulário(s)...`, { spinner: true });
+
+      let docs = [];
+      try {
+        const promises = uniqueIds.map(id => db.collection('formularios-ate').doc(id).get());
+        const snaps = await Promise.all(promises);
+        snaps.forEach((snap, i) => {
+          if (!snap.exists) {
+            docs.push({ id: uniqueIds[i], missing: true });
+          } else {
+            docs.push({ id: uniqueIds[i], data: snap.data() });
+          }
+        });
+      } catch (e) {
+        console.error(e);
+        showError('Erro ao buscar dados no Firestore.', [String(e.message || e)]);
+        return;
+      }
+
+      // ── Validações ──
+      const missing = docs.filter(d => d.missing).map(d => d.id);
+      if (missing.length) {
+        showError('Os seguintes IDs não foram encontrados na base:', missing);
+        return;
+      }
+
+      const found = docs.map(d => ({ id: d.id, ...d.data }));
+
+      // 1) Todos concluídos
+      const naoConcluidos = found.filter(d => d.status !== 'concluido').map(d => `${d.id} (${d.status || 'em_andamento'})`);
+      if (naoConcluidos.length) {
+        showError('Apenas formulários CONCLUÍDOS podem ser compilados:', naoConcluidos);
+        return;
+      }
+
+      // 2) Mesmo formType
+      const tipos = Array.from(new Set(found.map(d => d.formType).filter(Boolean)));
+      if (tipos.length !== 1) {
+        showError('Os formulários selecionados são de tipos diferentes.', tipos.map(t => `• ${FORM_LABELS[t] || t}`));
+        return;
+      }
+      const formType = tipos[0];
+
+      // 3) Mesmo contrato
+      const contratoKey = `${formType}-num-contrato`;
+      const contratos = Array.from(new Set(found.map(d => (d.data && d.data[contratoKey]) || '').filter(Boolean)));
+      if (contratos.length !== 1) {
+        showError('Os formulários têm contratos diferentes (ou em branco):', contratos.length === 0 ? ['Nenhum contrato preenchido'] : contratos);
+        return;
+      }
+      const contrato = contratos[0];
+
+      // 4) Contratada (informativo)
+      const contratadaKey = `${formType}-contratada`;
+      const contratadas = Array.from(new Set(found.map(d => (d.data && d.data[contratadaKey]) || '').filter(Boolean)));
+      const contratada = contratadas[0] || '(não informada)';
+
+      // 5) Ordenar por data da inspeção (campo <tipo>-data) ascendente; fallback para createdAt
+      const dataKey = `${formType}-data`;
+      found.sort((a, b) => {
+        const da = (a.data && a.data[dataKey]) || '';
+        const db_ = (b.data && b.data[dataKey]) || '';
+        if (da && db_) return da.localeCompare(db_);
+        // Fallback: createdAt timestamp
+        const ta = a.createdAt && a.createdAt.toMillis ? a.createdAt.toMillis() : 0;
+        const tb = b.createdAt && b.createdAt.toMillis ? b.createdAt.toMillis() : 0;
+        return ta - tb;
+      });
+
+      // ── Tudo validado: renderizar ──
+      window.__compilado = { formType, contrato, contratada, found };
+      document.getElementById('status').style.display = 'none';
+      const root = document.getElementById('compilado');
+      root.style.display = 'block';
+
+      const cover = renderCover({ formType, contrato, contratada, found });
+      const bodies = found.map((d, i) => renderForm(d, i + 1)).join('');
+      root.innerHTML = cover + bodies;
+    }
+
+    // ──────────── HELPERS DE DADOS ────────────
+    function escapeHtml(s) {
+      return String(s == null ? '' : s)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function fmtDateBR(isoDateStr) {
+      if (!isoDateStr) return '—';
+      // Formato esperado: YYYY-MM-DD (input type=date). Converter para DD/MM/AAAA.
+      const m = String(isoDateStr).match(/^(\d{4})-(\d{2})-(\d{2})/);
+      if (!m) return isoDateStr;
+      return `${m[3]}/${m[2]}/${m[1]}`;
+    }
+
+    function getLocalStr(d) {
+      const t = d.formType;
+      const data = d.data || {};
+      const r = data['radio__' + t + '-local'];
+      if (!r) return '—';
+      if (r === 'Outro') return data[t + '-outro-local'] || 'Outro';
+      return r;
+    }
+
+    function getDataInspecao(d) {
+      const data = d.data || {};
+      return data[d.formType + '-data'] || '';
+    }
+
+    // Conta pendências por tipo de formulário (para a coluna da capa).
+    function countPendencies(d) {
+      const t = d.formType;
+      const data = d.data || {};
+      let count = 0;
+
+      if (t === 'infra' || t === 'almox') {
+        // NCs: radio__<prefixo>-item-N === 'NC'
+        const prefix = t === 'infra' ? 'infra-item-' : 'almox-item-';
+        Object.keys(data).forEach(k => {
+          if (k.startsWith('radio__' + prefix) && data[k] === 'NC') count++;
+        });
+        return count;
+      }
+
+      if (t === 'moto' || t === 'es2' || t === 'el2') {
+        // Tabelas com Qtd. Pendente > 0: data['qty__tb-X__N']
+        Object.keys(data).forEach(k => {
+          if (k.startsWith('qty__')) {
+            const v = parseFloat(data[k]);
+            if (!isNaN(v) && v > 0) count++;
+          }
+        });
+        // Checklists não marcados — para cada item dos arrays, se não tem check__cl-... === true → pendência
+        const checklistDivIds = (t === 'moto')
+          ? [{ items: motoChecklistVeiculo, divId: 'checklist-moto-veiculo' }]
+          : t === 'es2'
+            ? [
+              { items: es2ChecklistVeiculo, divId: 'checklist-es2-veiculo' },
+              { items: es2ChecklistEscada, divId: 'checklist-es2-escada' }
+            ]
+            : [
+              { items: el2ChecklistVeiculo, divId: 'checklist-el2-veiculo' },
+              { items: el2ChecklistEscada, divId: 'checklist-el2-escada' }
+            ];
+        checklistDivIds.forEach(({ items, divId }) => {
+          items.forEach((_, i) => {
+            const key = 'check__cl-' + divId + '-' + i;
+            if (!data[key]) count++;
+          });
+        });
+        return count;
+      }
+
+      if (t === 'amb') {
+        // Soma de informações preenchidas (radios respondidos, checks ativos, textos não vazios)
+        Object.keys(data).forEach(k => {
+          const v = data[k];
+          if (k.startsWith('radio__')) { if (v) count++; }
+          else if (k.startsWith('check__')) { if (v === true) count++; }
+          else if (k.startsWith('photos__')) { /* ignorado */ }
+          else if (typeof v === 'string' && v.trim() !== '') count++;
+        });
+        return count;
+      }
+
+      return 0;
+    }
+
+    // ──────────── RENDER DE CADA FORMULÁRIO ────────────
+    function renderForm(d, ordinal) {
+      const t = d.formType;
+      let body = '';
+      if (t === 'infra' || t === 'almox') body = renderInfraAlmox(d);
+      else if (t === 'moto') body = renderMoto(d);
+      else if (t === 'es2' || t === 'el2') body = renderEsEl(d);
+      else if (t === 'amb') body = renderAmb(d);
+      else body = '<div class="section-empty">Tipo de formulário não suportado.</div>';
+
+      return `
+        <div class="form-block">
+          ${renderSubHeader(d, ordinal)}
+          <div class="form-card">${body}</div>
+        </div>
+      `;
+    }
+
+    // ──────────── SUB-CABEÇALHO POR FORMULÁRIO ────────────
+    function renderSubHeader(d, ordinal) {
+      const t = d.formType;
+      const data = d.data || {};
+      const title = `Formulário ${ordinal} — ${FORM_LABELS[t] || t}`;
+      const dataInsp = fmtDateBR(getDataInspecao(d)) || '—';
+      const local = getLocalStr(d);
+      const idStr = d.id;
+
+      // Agentes (todos os tipos)
+      const agentes = [];
+      for (let i = 1; i <= 3; i++) {
+        const nome = data[`${t}-agente${i}`];
+        const mat = data[`${t}-mat${i}`];
+        if (nome || mat) {
+          agentes.push(`${escapeHtml(nome || '—')} (mat. ${escapeHtml(mat || '—')})`);
+        }
+      }
+      const agentesStr = agentes.length ? agentes.join('<br>') : '—';
+
+      return `
+        <div class="sub-header">
+          <div class="sh-title">${escapeHtml(title)}</div>
+          <div class="sh-meta">
+            <div><strong>ID:</strong> ${escapeHtml(idStr)}</div>
+            <div><strong>Data Inspeção:</strong> ${escapeHtml(dataInsp)}</div>
+            <div><strong>Local:</strong> ${escapeHtml(local)}</div>
+            <div><strong>Agente(s):</strong> ${agentesStr}</div>
+          </div>
+        </div>
+      `;
+    }
+
+    // ──────────── COMPONENTES (Empresa / Equipe) ────────────
+    function renderComponentes(data, type) {
+      const isEmpresa = (type === 'infra' || type === 'almox');
+      const sectionTitle = isEmpresa ? 'Componentes da Empresa' : 'Componentes da Equipe Apresentada';
+      const labelCol1 = isEmpresa ? 'Nome do Responsável' : 'Nome';
+      const labelCol3 = isEmpresa ? 'Função' : 'Cód. Crachá';
+
+      const triplets = [];
+      if (type === 'infra') {
+        // Schema único: infra-resp-nome / infra-resp-cpf / infra-resp-funcao
+        triplets.push({
+          nome: data['infra-resp-nome'],
+          mat: data['infra-resp-cpf'],
+          col3: data['infra-resp-funcao']
+        });
+      } else if (type === 'almox') {
+        // Schema múltiplo: almox-resp-nome{N} / almox-resp-mat{N} / almox-resp-funcao{N}
+        for (let i = 1; i <= 5; i++) {
+          triplets.push({
+            nome: data[`almox-resp-nome${i}`],
+            mat: data[`almox-resp-mat${i}`],
+            col3: data[`almox-resp-funcao${i}`]
+          });
+        }
+      } else if (type === 'moto' || type === 'es2' || type === 'el2') {
+        // Schema múltiplo: <type>-nome{N} / <type>-cpf{N} / <type>-cracha{N}
+        for (let i = 1; i <= 5; i++) {
+          triplets.push({
+            nome: data[`${type}-nome${i}`],
+            mat: data[`${type}-cpf${i}`],
+            col3: data[`${type}-cracha${i}`]
+          });
+        }
+      }
+
+      const componentes = triplets.filter(t => t.nome || t.mat || t.col3);
+
+      if (componentes.length === 0) {
+        return `<div class="section-title">${sectionTitle}</div><div class="section-empty">Nenhum componente informado.</div>`;
+      }
+
+      const rows = componentes.map(c =>
+        `<tr>
+          <td>${escapeHtml(c.nome || '—')}</td>
+          <td>${escapeHtml(c.mat || '—')}</td>
+          <td>${escapeHtml(c.col3 || '—')}</td>
+        </tr>`
+      ).join('');
+
+      return `
+        <div class="section-title">${sectionTitle}</div>
+        <table class="components-table">
+          <thead>
+            <tr><th>${labelCol1}</th><th>Matrícula</th><th>${labelCol3}</th></tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      `;
+    }
+
+    // ──────────── INFRA / ALMOX ────────────
+    function renderInfraAlmox(d) {
+      const t = d.formType;
+      const data = d.data || {};
+      const itemPrefix = (t === 'infra') ? 'infra-item-' : 'almox-item-';
+      const ncTextPrefix = (t === 'infra') ? 'nc__nc-text-' : 'nc__nc-almox-text-';
+
+      const ncs = [];
+      infraItems.forEach(item => {
+        const radioKey = 'radio__' + itemPrefix + item.num;
+        if (data[radioKey] === 'NC') {
+          const obs = data[ncTextPrefix + item.num] || '';
+          ncs.push({ num: item.num, desc: item.desc, obs });
+        }
+      });
+
+      const componentesHtml = renderComponentes(data, t);
+
+      let ncHtml;
+      if (ncs.length === 0) {
+        ncHtml = `<div class="section-title">Não Conformidades (NC)</div>
+          <div class="section-empty">Nenhuma não conformidade registrada.</div>`;
+      } else {
+        const rows = ncs.map(nc => `
+          <tr>
+            <td class="item-num">${nc.num}</td>
+            <td>${escapeHtml(nc.desc)}</td>
+            <td class="obs">${escapeHtml(nc.obs) || '<span style="color:var(--text-light);font-style:italic;">(sem observação)</span>'}</td>
+          </tr>`).join('');
+        ncHtml = `
+          <div class="section-title">Não Conformidades (NC) — ${ncs.length}</div>
+          <table class="nc-table">
+            <thead>
+              <tr><th class="item-num">Item</th><th>Descrição</th><th>Observação</th></tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+        `;
+      }
+
+      return componentesHtml + ncHtml;
+    }
+
+    // ──────────── PENDENCY TABLE (Moto/ES2/EL2 — Ferramental, EPIs, Kit) ────────────
+    function getLaudoDetails(data, itemKey) {
+      // Coleta breve de info de laudo: Nº ctrl, Validade, S/N, Fabricantes marcados, Laboratórios marcados.
+      const parts = [];
+
+      // Laudos individuais (L1, L2, ...): Nº ctrl + Validade + radio S/N
+      for (let i = 1; i <= 12; i++) {
+        const laudoKey = itemKey + '__L' + i;
+        const sn = data['radio__' + laudoKey];
+        const ctrl = data['laudo__' + laudoKey + '__ctrl'];
+        const val = data['laudo__' + laudoKey + '__val'];
+        if (!sn && !ctrl && !val) continue;
+        const bits = [];
+        if (sn) bits.push(`S/N: ${sn}`);
+        if (ctrl) bits.push(`Nº ctrl: ${ctrl}`);
+        if (val) bits.push(`Val: ${val}`);
+        if (bits.length) parts.push(`Laudo ${i}: ${bits.join(' · ')}`);
+      }
+
+      // Fabricantes marcados
+      const fabsMarked = Object.keys(data)
+        .filter(k => k.startsWith('fab__' + itemKey + '__') && data[k] === true)
+        .map(k => k.replace('fab__' + itemKey + '__', '').replace(/_/g, ' '));
+      const fabOutro = data['faboutro__' + itemKey];
+      if (fabOutro) {
+        const idx = fabsMarked.indexOf('Outro');
+        if (idx >= 0) fabsMarked[idx] = `Outro: ${fabOutro}`;
+      }
+      if (fabsMarked.length) parts.push(`Fabricante: ${fabsMarked.join(', ')}`);
+
+      // Laboratórios marcados
+      const labsMarked = Object.keys(data)
+        .filter(k => k.startsWith('lab__' + itemKey + '__') && data[k] === true)
+        .map(k => k.replace('lab__' + itemKey + '__', '').replace(/_/g, ' '));
+      const labOutro = data['laboutro__' + itemKey];
+      if (labOutro) {
+        const idx = labsMarked.indexOf('Outro');
+        if (idx >= 0) labsMarked[idx] = `Outro: ${labOutro}`;
+      }
+      if (labsMarked.length) parts.push(`Laboratório: ${labsMarked.join(', ')}`);
+
+      return parts.join(' · ');
+    }
+
+    function renderPendencyTable(items, tbodyId, data, sectionLabel) {
+      const rows = [];
+      items.forEach(item => {
+        const itemKey = tbodyId + '__' + item.num;
+        const qtyVal = parseFloat(data['qty__' + itemKey]);
+        if (isNaN(qtyVal) || qtyVal <= 0) return;
+        const reqVal = data['req__' + itemKey];
+        const reqDisplay = reqVal !== undefined && reqVal !== '' ? reqVal : item.qty;
+        const partial = parseFloat(reqDisplay) > qtyVal;
+        const laudoDetails = partial ? getLaudoDetails(data, itemKey) : '';
+        rows.push({ num: item.num, desc: item.desc, uni: item.uni, req: reqDisplay, qty: qtyVal, laudoDetails });
+      });
+
+      if (rows.length === 0) {
+        return `<div class="section-title">${sectionLabel}</div>
+          <div class="section-empty">Sem pendências nesta seção.</div>`;
+      }
+
+      const html = rows.map(r => `
+        <tr>
+          <td class="item-num">${r.num}</td>
+          <td>${escapeHtml(r.desc)}</td>
+          <td style="text-align:center;">${escapeHtml(r.uni || '—')}</td>
+          <td style="text-align:center;">${escapeHtml(String(r.req))}</td>
+          <td style="text-align:center; font-weight:700; color:var(--warn);">${r.qty}</td>
+        </tr>
+        ${r.laudoDetails ? `<tr><td></td><td colspan="4" style="font-size:11px; color:var(--text-light); padding-top:0; padding-bottom:8px; font-style:italic;">${escapeHtml(r.laudoDetails)}</td></tr>` : ''}
+      `).join('');
+
+      return `
+        <div class="section-title">${sectionLabel} — ${rows.length} ${rows.length === 1 ? 'pendência' : 'pendências'}</div>
+        <table class="nc-table">
+          <thead>
+            <tr>
+              <th class="item-num">Item</th>
+              <th>Descrição</th>
+              <th style="width:50px; text-align:center;">Uni.</th>
+              <th style="width:70px; text-align:center;">Qtd. Exigida</th>
+              <th style="width:70px; text-align:center;">Qtd. Pendente</th>
+            </tr>
+          </thead>
+          <tbody>${html}</tbody>
+        </table>
+      `;
+    }
+
+    // ──────────── VEÍCULO ────────────
+    const veiculoSchemas = {
+      moto: [
+        { key: 'moto-placa', label: 'Placa' },
+        { key: 'moto-modelo', label: 'Modelo' },
+        { key: 'moto-marca', label: 'Marca' },
+        { key: 'moto-ano', label: 'Ano de Fabricação' },
+        { keySelect: 'moto-veiculo-proprio', label: 'Veículo Próprio' },
+        { keySelect: 'moto-veiculo-locado', label: 'Veículo Locado' },
+        { key: 'moto-obs-veic', label: 'Observações', wide: true }
+      ],
+      es2: [
+        { key: 'es2-placa', label: 'Placa' },
+        { key: 'es2-modelo', label: 'Modelo do Veículo' },
+        { key: 'es2-marca-veic', label: 'Marca do Veículo' },
+        { key: 'es2-ano', label: 'Ano de Fabricação' },
+        { key: 'es2-motorista', label: 'Motorista' },
+        { key: 'es2-cpf-mot', label: 'Matrícula do Motorista' },
+        { keyRadio: 'es2-tipo-equip', label: 'Tipo de Equipamento' },
+        { key: 'es2-marca-equip', label: 'Marca do Equipamento' },
+        { key: 'es2-modelo-equip', label: 'Modelo do Equipamento' },
+        { key: 'es2-ano-equip', label: 'Ano Fab. Equipamento' },
+        { key: 'es2-obs-veic', label: 'Observações', wide: true }
+      ],
+      el2: [
+        { key: 'el2-placa', label: 'Placa' },
+        { key: 'el2-modelo', label: 'Modelo do Veículo' },
+        { key: 'el2-marca-veic', label: 'Marca do Veículo' },
+        { key: 'el2-ano', label: 'Ano de Fabricação' },
+        { key: 'el2-motorista', label: 'Motorista' },
+        { key: 'el2-cpf-mot', label: 'Matrícula do Motorista' },
+        { keyRadio: 'el2-tipo-equip', label: 'Tipo de Equipamento' },
+        { key: 'el2-marca-equip', label: 'Marca do Equipamento' },
+        { key: 'el2-modelo-equip', label: 'Modelo do Equipamento' },
+        { key: 'el2-ano-equip', label: 'Ano Fab. Equipamento' },
+        { key: 'el2-obs-veic', label: 'Observações', wide: true }
+      ]
+    };
+
+    function renderVeiculo(data, type) {
+      const schema = veiculoSchemas[type] || [];
+      const filled = [];
+      schema.forEach(f => {
+        let val;
+        if (f.keyRadio) val = data['radio__' + f.keyRadio];
+        else if (f.keySelect) val = data[f.keySelect]; // selects no saved schema atual podem não vir
+        else val = data[f.key];
+        if (val !== undefined && String(val).trim() !== '') {
+          filled.push({ label: f.label, value: val, wide: !!f.wide });
+        }
+      });
+
+      if (filled.length === 0) {
+        return `<div class="section-title">Veículo</div>
+          <div class="section-empty">Nenhuma informação de veículo preenchida.</div>`;
+      }
+
+      const compactItems = filled.filter(i => !i.wide);
+      const wideItems = filled.filter(i => i.wide);
+
+      const compactHtml = compactItems.length ? `
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:6px 18px; font-size:12px; margin-top:4px;">
+          ${compactItems.map(i => `<div><strong>${escapeHtml(i.label)}:</strong> ${escapeHtml(i.value)}</div>`).join('')}
+        </div>` : '';
+
+      const wideHtml = wideItems.map(i => `
+        <div style="margin-top:8px; font-size:12px;"><strong>${escapeHtml(i.label)}:</strong> ${escapeHtml(i.value)}</div>
+      `).join('');
+
+      return `<div class="section-title">Veículo</div>${compactHtml}${wideHtml}`;
+    }
+
+    // ──────────── CHECKLIST ────────────
+    function renderChecklistPendencias(items, divId, data, sectionLabel) {
+      const naoMarcados = [];
+      items.forEach((label, i) => {
+        const key = 'check__cl-' + divId + '-' + i;
+        if (!data[key]) naoMarcados.push({ idx: i + 1, label });
+      });
+
+      if (naoMarcados.length === 0) {
+        return `<div class="section-title">${sectionLabel}</div>
+          <div class="section-empty">Todos os itens conformes.</div>`;
+      }
+
+      const lis = naoMarcados.map(n => `<li>${escapeHtml(n.label)}</li>`).join('');
+      return `
+        <div class="section-title">${sectionLabel} — ${naoMarcados.length} ${naoMarcados.length === 1 ? 'item não conforme' : 'itens não conformes'}</div>
+        <ul style="margin-left:20px; font-size:12px; line-height:1.6;">${lis}</ul>
+      `;
+    }
+
+    // ──────────── MOTO ────────────
+    function renderMoto(d) {
+      const data = d.data || {};
+      const componentes = renderComponentes(data, 'moto');
+      const ferr = renderPendencyTable(motoFerramentas, 'tb-moto-ferramentas', data, 'Ferramental — Pendências');
+      const epis = renderPendencyTable(motoEpis, 'tb-moto-epis', data, 'EPIs — Pendências');
+      const veic = renderVeiculo(data, 'moto');
+      const checkVeic = renderChecklistPendencias(motoChecklistVeiculo, 'checklist-moto-veiculo', data, 'Check-list de Verificação do Veículo');
+      return componentes + ferr + epis + veic + checkVeic;
+    }
+
+    // ──────────── ES2 / EL2 ────────────
+    function renderEsEl(d) {
+      const t = d.formType; // 'es2' | 'el2'
+      const data = d.data || {};
+      const ferramentasArr = (t === 'es2') ? es2Ferramentas : el2Ferramentas;
+      const episArr = (t === 'es2') ? es2Epis : el2Epis;
+      const kitArr = (t === 'es2') ? es2Kit : el2Kit;
+      const checkVeicArr = (t === 'es2') ? es2ChecklistVeiculo : el2ChecklistVeiculo;
+      const checkEscArr = (t === 'es2') ? es2ChecklistEscada : el2ChecklistEscada;
+
+      const componentes = renderComponentes(data, t);
+      const ferr = renderPendencyTable(ferramentasArr, `tb-${t}-ferramentas`, data, 'Ferramentas e Equipamentos — Pendências');
+      const epis = renderPendencyTable(episArr, `tb-${t}-epis`, data, 'EPIs — Pendências');
+      const kit = renderPendencyTable(kitArr, `tb-${t}-kit`, data, 'Kit Antirreprova — Pendências');
+      const veic = renderVeiculo(data, t);
+      const checkVeic = renderChecklistPendencias(checkVeicArr, `checklist-${t}-veiculo`, data, 'Check-list do Veículo');
+      const checkEsc = renderChecklistPendencias(checkEscArr, `checklist-${t}-escada`, data, 'Check-list do Equipamento (Escada / Cesta)');
+      return componentes + ferr + epis + kit + veic + checkVeic + checkEsc;
+    }
+
+    // ──────────── PARTE AMBIENTAL ────────────
+    const ambSections = [
+      {
+        title: 'Identificação',
+        fields: [
+          { key: 'amb-tecnico', label: 'Técnico de Meio Ambiente da Contratada' },
+          { key: 'amb-crt', label: 'CRT Nº' }
+        ]
+      },
+      {
+        title: 'Abastecimento de Água',
+        radio: {
+          name: 'amb-agua',
+          options: {
+            concessionaria: 'Concessionária (COPASA, SAAE, etc.)',
+            cisterna: 'Cisterna, poço artesiano ou outra forma subterrânea'
+          }
+        },
+        obs: 'amb-agua-obs'
+      },
+      {
+        title: 'Coleta de Esgoto',
+        radio: {
+          name: 'amb-esgoto',
+          options: {
+            concessionaria: 'Concessionária (COPASA, SAAE, etc.)',
+            'sistema-proprio': 'Sistema próprio (fossa séptica, filtro anaeróbio)',
+            'fossa-impermeavel': 'Fossa impermeabilizada recolhida por empresa'
+          }
+        },
+        obs: 'amb-esgoto-obs'
+      },
+      {
+        title: 'Armazenamento de Resíduos',
+        checks: [
+          { id: 'amb-residuos', label: 'Possui baias, tambores ou bombonas para separação e armazenamento de resíduos' }
+        ],
+        obs: 'amb-residuos-obs'
+      },
+      {
+        title: 'Armazenamento de Produtos Químicos',
+        checks: [
+          { id: 'amb-quimicos', label: 'Local identificado, trancado, ventilado e com FISPQ' }
+        ]
+      },
+      {
+        title: 'Armazenamento de Equipamentos Avariados Contendo Óleo',
+        radio: {
+          name: 'amb-oleo',
+          options: {
+            alvenaria: 'Bacia de contenção em alvenaria (mín 25 m²)',
+            metalica: 'Bacia(s) de contenção metálica(s) somando mín 25 m²'
+          }
+        },
+        obs: 'amb-oleo-obs'
+      },
+      {
+        title: 'Kit PAE – Plano de Atendimento a Emergência',
+        checks: [
+          { id: 'amb-pae', label: 'Kit para emergências de vazamento de óleo, sinalizado e com pá, serragem, sacos, fraldão e vassoura' }
+        ],
+        obs: 'amb-pae-obs'
+      },
+      {
+        title: 'Monitoramento de Fumaça Preta em Veículos a Diesel',
+        radio: {
+          name: 'amb-fumaca',
+          options: {
+            ringelmann: 'Escala Ringelmann (planilha trimestral assinada)',
+            opacimetro: 'Opacímetro em empresa contratada (com laudos técnicos)'
+          }
+        },
+        obs: 'amb-fumaca-obs'
+      },
+      {
+        title: 'Depósito de Postes',
+        checks: [
+          { id: 'amb-postes', label: 'Depósito sinalizado, cercado, trancado e sem condições para animais peçonhentos' }
+        ],
+        obs: 'amb-postes-obs'
+      },
+      {
+        title: 'Registro de Motosserras',
+        checks: [
+          { id: 'amb-motosserras', label: 'Motosserras com Licença de Porte e Certificado de Registro IEF dentro da validade' }
+        ],
+        obs: 'amb-motosserras-obs'
+      },
+      {
+        title: 'Triturador de Resíduos de Poda',
+        checks: [
+          { id: 'amb-triturador', label: 'Triturador na quantidade e especificação exigidas pelo contrato' }
+        ],
+        obs: 'amb-triturador-obs'
+      },
+      {
+        title: 'Visita Geral ao Pátio / Depósito',
+        checks: [
+          { id: 'amb-patio-1', label: 'Locais com água parada ou com potencial para tal' },
+          { id: 'amb-patio-2', label: 'Sinais de queima de resíduos, inclusive vegetação' },
+          { id: 'amb-patio-3', label: 'Local para lavagem de veículos' },
+          { id: 'amb-patio-4', label: 'Gaiolas, jaulas ou artefatos que indiquem aprisionamento de fauna' },
+          { id: 'amb-patio-5', label: 'Cisternas, poços artesianos ou fossas sanitárias' }
+        ],
+        obs: 'amb-patio-obs',
+        notice: 'Em caso de ocorrência destes quesitos, fazer constar no Relatório de ATE – RATE.'
+      },
+      {
+        title: 'Alojamento',
+        checks: [
+          { id: 'amb-alojamento', label: 'Não há vazamento de água em vasos sanitários, torneiras e registros' }
+        ],
+        obs: 'amb-alojamento-obs'
+      },
+      {
+        title: 'Boas Práticas Ambientais',
+        checks: [
+          { id: 'amb-boas-1', label: 'Coleta de água de chuva' },
+          { id: 'amb-boas-2', label: 'Reaproveitamento de água' },
+          { id: 'amb-boas-3', label: 'Campanhas de conscientização ambiental' },
+          { id: 'amb-boas-4', label: 'Coleta seletiva' }
+        ],
+        obs: 'amb-boas-obs'
+      },
+      {
+        title: 'Encerramento',
+        fields: [
+          { key: 'amb-realizada', label: 'Verificação realizada por' },
+          { key: 'amb-mat', label: 'Matrícula' },
+          { key: 'amb-gerencia', label: 'Gerência' },
+          { key: 'amb-data', label: 'Data', formatDate: true }
+        ]
+      }
+    ];
+
+    function renderAmbSection(section, data) {
+      const parts = [];
+
+      // 1) Campos diretos (Identificação, Encerramento)
+      if (section.fields) {
+        const filled = section.fields.map(f => {
+          let v = data[f.key];
+          if (f.formatDate) v = fmtDateBR(v);
+          return { label: f.label, value: v };
+        }).filter(f => f.value !== undefined && String(f.value).trim() !== '');
+        if (filled.length) {
+          parts.push(`
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:6px 18px; font-size:12px; margin-top:4px;">
+              ${filled.map(i => `<div><strong>${escapeHtml(i.label)}:</strong> ${escapeHtml(i.value)}</div>`).join('')}
+            </div>
+          `);
+        }
+      }
+
+      // 2) Radio
+      if (section.radio) {
+        const selected = data['radio__' + section.radio.name];
+        const label = selected ? (section.radio.options[selected] || selected) : '— Não respondido —';
+        const cls = selected ? '' : 'style="color:var(--text-light); font-style:italic;"';
+        parts.push(`<div style="font-size:12px; margin-top:4px;" ${cls}><strong>Opção:</strong> ${escapeHtml(label)}</div>`);
+      }
+
+      // 3) Checkboxes
+      if (section.checks) {
+        const items = section.checks.map(c => {
+          const checked = data['check__' + c.id] === true;
+          return { label: c.label, checked };
+        });
+        parts.push(`
+          <ul style="margin:6px 0 0 18px; font-size:12px; line-height:1.6; list-style:none; padding-left:0;">
+            ${items.map(i => `<li>${i.checked ? '✅' : '🟥'} ${escapeHtml(i.label)}</li>`).join('')}
+          </ul>
+        `);
+      }
+
+      // 4) Notice (texto fixo informativo)
+      if (section.notice) {
+        parts.push(`<div style="margin-top:6px; font-size:11px; color:var(--text-light); font-style:italic;">${escapeHtml(section.notice)}</div>`);
+      }
+
+      // 5) Observação (textarea)
+      if (section.obs) {
+        const txt = data[section.obs];
+        if (txt && String(txt).trim() !== '') {
+          parts.push(`<div style="margin-top:8px; font-size:12px;"><strong>Observação:</strong> <span style="white-space:pre-wrap;">${escapeHtml(txt)}</span></div>`);
+        }
+      }
+
+      return `<div class="section-title">${escapeHtml(section.title)}</div>${parts.join('')}`;
+    }
+
+    function renderAmb(d) {
+      const data = d.data || {};
+      return ambSections.map(s => renderAmbSection(s, data)).join('');
+    }
+
+    // ──────────── RENDER DA CAPA ────────────
+    function renderCover({ formType, contrato, contratada, found }) {
+      const formLabel = FORM_LABELS[formType] || formType;
+      const totalPendencias = found.reduce((sum, d) => sum + countPendencies(d), 0);
+
+      const rows = found.map((d, i) => {
+        const pend = countPendencies(d);
+        const pendClass = pend === 0 ? 'zero' : 'has';
+        return `
+          <tr>
+            <td class="num">${i + 1}</td>
+            <td class="id">${escapeHtml(d.id)}</td>
+            <td>${escapeHtml(fmtDateBR(getDataInspecao(d)))}</td>
+            <td>${escapeHtml(getLocalStr(d))}</td>
+            <td class="pend ${pendClass}">${pend}</td>
+          </tr>`;
+      }).join('');
+
+      const now = new Date();
+      const dataExp = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+      return `
+        <div class="comp-header">
+          <div class="comp-logo">CEMIG</div>
+          <div style="flex:1;">
+            <h1>RELATÓRIO COMPILADO – AVALIAÇÃO TÉCNICA EM EMPREITEIRA – ATE</h1>
+            <h2>${escapeHtml(formLabel.toUpperCase())}</h2>
+            <div class="meta">
+              Contrato: ${escapeHtml(contrato)}<br>
+              Contratada: ${escapeHtml(contratada)}
+            </div>
+          </div>
+        </div>
+        <div class="comp-card">
+          <div class="comp-cover-title">Sumário (${found.length} ${found.length === 1 ? 'formulário' : 'formulários'})</div>
+          <table class="comp-table">
+            <thead>
+              <tr>
+                <th class="num">#</th>
+                <th>ID</th>
+                <th>Data Inspeção</th>
+                <th>Local</th>
+                <th class="pend">Pendências</th>
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+            <tfoot>
+              <tr style="background:#eef2f7; font-weight:700;">
+                <td colspan="4" style="text-align:right; padding:8px 12px;">Total</td>
+                <td class="pend ${totalPendencias === 0 ? 'zero' : 'has'}" style="padding:8px 12px;">${totalPendencias}</td>
+              </tr>
+            </tfoot>
+          </table>
+          <div class="comp-footer">Gerado em ${dataExp}</div>
+        </div>
+      `;
+    }
+  </script>
+</body>
+
+</html>
