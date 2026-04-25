@@ -9,6 +9,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="constants.js"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
 
@@ -2968,8 +2969,12 @@
 
   <script>
     // ════════════════════════════════════════════════════════
-    // DATA - INFRAESTRUTURA
+    // DATA - constantes de itens estão em constants.js (compartilhado com compilado.html)
+    // Disponíveis aqui: infraItems, motoFerramentas, motoEpis, motoChecklistVeiculo,
+    //                   es2Ferramentas, es2Epis, es2Kit, es2ChecklistVeiculo, es2ChecklistEscada,
+    //                   el2Ferramentas, el2Epis, el2Kit, el2ChecklistVeiculo, el2ChecklistEscada
     // ════════════════════════════════════════════════════════
+    /* MOVIDO PARA constants.js — manter este bloco comentado para indicar a remoção
     const infraItems = [
       { num: 1, desc: "Equipamento de refrigeração em bom estado, para guarda e conservação de alimentos." },
       { num: 2, desc: "Água potável, filtrada, para os trabalhadores por meio de bebedouros ou equipamento similar." },
@@ -3498,6 +3503,7 @@
       "Sistema de nivelamento da cesta aérea",
       "Liner e teste para 46 kV (inserir validade do laudo nas observações)",
     ];
+    */
 
     // ════════════════════════════════════════════════════════
     // RENDER FUNCTIONS
