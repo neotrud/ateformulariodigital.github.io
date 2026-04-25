@@ -337,6 +337,45 @@
       text-align: center;
     }
 
+    .bulk-bar {
+      display: none;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 14px;
+      margin-bottom: 12px;
+      background: #e8f5ea;
+      border: 1px solid var(--cemig-blue);
+      border-radius: 4px;
+      font-size: 13px;
+    }
+
+    .bulk-bar.visible {
+      display: flex;
+    }
+
+    .bulk-bar .bulk-count {
+      font-weight: 700;
+      color: var(--cemig-blue);
+    }
+
+    .bulk-bar .btn {
+      padding: 6px 12px;
+      font-size: 12px;
+    }
+
+    .row-check,
+    .header-check {
+      width: 32px;
+      text-align: center;
+    }
+
+    .row-check input,
+    .header-check input {
+      cursor: pointer;
+      width: 16px;
+      height: 16px;
+    }
+
     .login-box {
       max-width: 400px;
       margin: 100px auto;
@@ -416,21 +455,23 @@
           <div class="ms-trigger" tabindex="0">Usuário Atual: Todos</div>
           <div class="ms-panel"></div>
         </div>
-        <label class="filter-chip" id="chip-orfaos">
-          <input type="checkbox" id="f-orfaos"> Só órfãos
-        </label>
-        <label class="filter-chip" id="chip-transf">
-          <input type="checkbox" id="f-transferred"> Transferidos
-        </label>
         <input type="text" id="admin-search" placeholder="🔍 Pesquisar por ID, Data, etc...">
         <button class="btn btn-outline" onclick="clearFilters()" title="Limpar todos os filtros">🧹 Limpar</button>
         <div id="result-count"></div>
       </div>
+      <div id="bulk-bar" class="bulk-bar">
+        <span class="bulk-count" id="bulk-count">0 selecionados</span>
+        <button class="btn btn-outline" onclick="bulkReopen()">↻ Reabrir</button>
+        <button class="btn" style="background:var(--warn); color:white;" onclick="bulkDelete()">🗑 Excluir</button>
+        <button class="btn btn-outline" style="margin-left:auto;" onclick="clearSelection()">✕ Limpar seleção</button>
+      </div>
+
       <div style="overflow-x:auto;">
         <table id="admin-table">
 
           <thead>
             <tr>
+              <th class="header-check"><input type="checkbox" id="select-all-visible" title="Selecionar todos os visíveis"></th>
               <th style="cursor:pointer;" onclick="sortAdminData('createdAt')">Data de Criação ⇅</th>
               <th style="cursor:pointer;" onclick="sortAdminData('date')">Data de Atualização ⇅</th>
               <th style="cursor:pointer;" onclick="sortAdminData('id')">ID da Sessão ⇅</th>
@@ -445,7 +486,7 @@
 
           <tbody id="admin-tbody">
             <tr>
-              <td colspan="9" style="text-align:center; padding:20px;">Carregando dados...</td>
+              <td colspan="10" style="text-align:center; padding:20px;">Carregando dados...</td>
             </tr>
           </tbody>
         </table>
@@ -513,6 +554,7 @@
       // Restaurar estado dos filtros ANTES de carregar dados (para sortCol/sortAsc)
       applyFiltersToUI(loadSavedFilters());
       bindFilterListeners();
+      bindSelectAll();
       loadAdminData();
       loadAccessRequests();
     });
@@ -524,6 +566,8 @@
     let allAdminData = [];
     let sortCol = 'date';
     let sortAsc = false;
+    let selectedIds = new Set();
+    let lastFilteredIds = []; // IDs visíveis na última renderização
 
     // ──────────── FILTROS PERSISTENTES ────────────
     const FILTERS_KEY = 'ate-admin-filters';
@@ -539,8 +583,6 @@
         local: [...msState.local],
         creator: [...msState.creator],
         current: [...msState.current],
-        orfaos: document.getElementById('f-orfaos')?.checked || false,
-        transferred: document.getElementById('f-transferred')?.checked || false,
         sortCol, sortAsc
       };
     }
@@ -558,8 +600,6 @@
       MULTI_KEYS.forEach(k => {
         msState[k] = Array.isArray(state[k]) ? state[k].slice() : [];
       });
-      check('f-orfaos', state.orfaos);
-      check('f-transferred', state.transferred);
       if (state.sortCol) sortCol = state.sortCol;
       if (typeof state.sortAsc === 'boolean') sortAsc = state.sortAsc;
       MULTI_KEYS.forEach(renderMultiSelectPanel);
@@ -662,11 +702,8 @@
     function clearFilters() {
       MULTI_KEYS.forEach(k => { msState[k] = []; });
       const set = (id, v) => { const el = document.getElementById(id); if (el) el.value = v; };
-      const check = (id, v) => { const el = document.getElementById(id); if (el) el.checked = v; };
       set('admin-search', '');
       set('f-status', '');
-      check('f-orfaos', false);
-      check('f-transferred', false);
       sortCol = 'date';
       sortAsc = false;
       MULTI_KEYS.forEach(renderMultiSelectPanel);
@@ -683,13 +720,11 @@
       };
       mark('admin-search', state.search);
       mark('f-status', state.status);
-      document.getElementById('chip-orfaos')?.classList.toggle('active', state.orfaos);
-      document.getElementById('chip-transf')?.classList.toggle('active', state.transferred);
       // multi-selects já cuidam do próprio .active via updateMultiSelectTrigger
     }
 
     function bindFilterListeners() {
-      ['admin-search', 'f-status', 'f-orfaos', 'f-transferred'].forEach(id => {
+      ['admin-search', 'f-status'].forEach(id => {
         const el = document.getElementById(id);
         if (!el) return;
         const ev = (el.type === 'text') ? 'input' : 'change';
@@ -709,7 +744,7 @@
       try {
         const snapshot = await db.collection('formularios-ate').orderBy('createdAt', 'desc').get();
         if (snapshot.empty) {
-          tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; padding:20px;">Nenhum formulário encontrado no banco de dados.</td></tr>';
+          tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; padding:20px;">Nenhum formulário encontrado no banco de dados.</td></tr>';
           return;
         }
 
@@ -772,7 +807,7 @@
 
       } catch (e) {
         console.error("Erro ao carregar painel admin:", e);
-        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; padding:20px; color:var(--warn);">Erro ao buscar dados do Firebase. Verifique sua conexão.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; padding:20px; color:var(--warn);">Erro ao buscar dados do Firebase. Verifique sua conexão.</td></tr>';
       }
     }
 
@@ -787,8 +822,6 @@
         if (state.local.length && !state.local.includes(d.local)) return false;
         if (state.creator.length && !state.creator.includes(d.creator)) return false;
         if (state.current.length && !state.current.includes(d.userEmail)) return false;
-        if (state.orfaos && d.userEmail !== '(sem dono)') return false;
-        if (state.transferred && !(d.ownershipHistory && d.ownershipHistory.length > 0)) return false;
         if (searchTxt) {
           const hit = d.id.toLowerCase().includes(searchTxt) ||
             d.form.toLowerCase().includes(searchTxt) ||
@@ -806,7 +839,7 @@
       updateActiveFilterStyles();
       const counter = document.getElementById('result-count');
       if (counter) {
-        const hasFilter = !!(state.search || state.status || state.form.length || state.local.length || state.creator.length || state.current.length || state.orfaos || state.transferred);
+        const hasFilter = !!(state.search || state.status || state.form.length || state.local.length || state.creator.length || state.current.length);
         counter.textContent = `Exibindo ${filtered.length} de ${allAdminData.length}`;
         counter.classList.toggle('filtered', hasFilter);
       }
@@ -828,7 +861,7 @@
       });
 
       if (filtered.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; padding:20px;">Nenhum registro encontrado.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; padding:20px;">Nenhum registro encontrado.</td></tr>';
         return;
       }
 
@@ -859,8 +892,10 @@
           ? 'font-size:11px; color:var(--cemig-blue); font-weight:600; max-width:170px; overflow:hidden; text-overflow:ellipsis;'
           : 'font-size:11px; color:var(--text-light); max-width:170px; overflow:hidden; text-overflow:ellipsis;';
 
+        const isChecked = selectedIds.has(d.id) ? 'checked' : '';
         html += `
           <tr>
+            <td class="row-check"><input type="checkbox" class="bulk-row" data-id="${d.id}" ${isChecked}></td>
             <td>${d.createdAtStr}</td>
             <td>${d.dateStr}</td>
             <td style="font-family:'IBM Plex Mono',monospace; font-size:11px;">${d.id}</td>
@@ -874,6 +909,10 @@
         `;
       });
       tbody.innerHTML = html;
+      lastFilteredIds = filtered.map(d => d.id);
+      bindRowCheckboxes();
+      updateBulkBar();
+      updateSelectAllState();
     }
 
     function filterAdminData() {
@@ -889,6 +928,153 @@
       }
       saveFilters();
       renderAdminTable();
+    }
+
+    // ──────────── SELEÇÃO E AÇÕES EM MASSA ────────────
+    function bindRowCheckboxes() {
+      document.querySelectorAll('.bulk-row').forEach(cb => {
+        cb.addEventListener('change', () => {
+          const id = cb.dataset.id;
+          if (cb.checked) selectedIds.add(id);
+          else selectedIds.delete(id);
+          updateBulkBar();
+          updateSelectAllState();
+        });
+      });
+    }
+
+    function updateBulkBar() {
+      const bar = document.getElementById('bulk-bar');
+      const count = document.getElementById('bulk-count');
+      if (!bar || !count) return;
+      const n = selectedIds.size;
+      bar.classList.toggle('visible', n > 0);
+      count.textContent = `${n} ${n === 1 ? 'selecionado' : 'selecionados'}`;
+    }
+
+    function updateSelectAllState() {
+      const master = document.getElementById('select-all-visible');
+      if (!master) return;
+      if (lastFilteredIds.length === 0) {
+        master.checked = false;
+        master.indeterminate = false;
+        return;
+      }
+      const visibleSelected = lastFilteredIds.filter(id => selectedIds.has(id)).length;
+      if (visibleSelected === 0) {
+        master.checked = false;
+        master.indeterminate = false;
+      } else if (visibleSelected === lastFilteredIds.length) {
+        master.checked = true;
+        master.indeterminate = false;
+      } else {
+        master.checked = false;
+        master.indeterminate = true;
+      }
+    }
+
+    function bindSelectAll() {
+      const master = document.getElementById('select-all-visible');
+      if (!master) return;
+      master.addEventListener('change', () => {
+        if (master.checked) {
+          lastFilteredIds.forEach(id => selectedIds.add(id));
+        } else {
+          lastFilteredIds.forEach(id => selectedIds.delete(id));
+        }
+        // Atualiza checkboxes das linhas visíveis
+        document.querySelectorAll('.bulk-row').forEach(cb => {
+          cb.checked = selectedIds.has(cb.dataset.id);
+        });
+        updateBulkBar();
+      });
+    }
+
+    function clearSelection() {
+      selectedIds.clear();
+      document.querySelectorAll('.bulk-row').forEach(cb => { cb.checked = false; });
+      updateBulkBar();
+      updateSelectAllState();
+    }
+
+    async function bulkDelete() {
+      const ids = Array.from(selectedIds);
+      if (ids.length === 0) return;
+      const ok = confirm(`⚠️ ATENÇÃO: Excluir PERMANENTEMENTE ${ids.length} ${ids.length === 1 ? 'formulário' : 'formulários'}?\n\nEsta ação não pode ser desfeita.`);
+      if (!ok) return;
+
+      let success = 0;
+      const failed = [];
+      // Firestore batch suporta até 500 operações por commit
+      const chunkSize = 450;
+      for (let i = 0; i < ids.length; i += chunkSize) {
+        const chunk = ids.slice(i, i + chunkSize);
+        const batch = db.batch();
+        chunk.forEach(id => batch.delete(db.collection('formularios-ate').doc(id)));
+        try {
+          await batch.commit();
+          success += chunk.length;
+        } catch (e) {
+          console.error('Erro ao excluir lote:', e);
+          failed.push(...chunk);
+        }
+      }
+
+      let msg = `${success} ${success === 1 ? 'excluído' : 'excluídos'} com sucesso.`;
+      if (failed.length) msg += `\n${failed.length} falharam: ${failed.slice(0, 10).join(', ')}${failed.length > 10 ? '...' : ''}`;
+      alert(msg);
+      selectedIds.clear();
+      loadAdminData();
+    }
+
+    async function bulkReopen() {
+      const ids = Array.from(selectedIds);
+      if (ids.length === 0) return;
+
+      // Filtrar apenas concluídos (reabrir só faz sentido nesses)
+      const idToData = new Map(allAdminData.map(d => [d.id, d]));
+      const toReopen = ids.filter(id => idToData.get(id)?.status === 'concluido');
+      const skipped = ids.length - toReopen.length;
+
+      if (toReopen.length === 0) {
+        alert(`Nenhum dos ${ids.length} selecionados está concluído. Reabrir só se aplica a formulários concluídos.`);
+        return;
+      }
+
+      const ok = confirm(
+        `Reabrir ${toReopen.length} ${toReopen.length === 1 ? 'formulário' : 'formulários'}?` +
+        (skipped ? `\n\n${skipped} ${skipped === 1 ? 'já estava em andamento' : 'já estavam em andamento'} — ${skipped === 1 ? 'será ignorado' : 'serão ignorados'}.` : '')
+      );
+      if (!ok) return;
+
+      let success = 0;
+      const failed = [];
+      const chunkSize = 450;
+      for (let i = 0; i < toReopen.length; i += chunkSize) {
+        const chunk = toReopen.slice(i, i + chunkSize);
+        const batch = db.batch();
+        chunk.forEach(id => batch.update(
+          db.collection('formularios-ate').doc(id),
+          {
+            status: 'em_andamento',
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+          }
+        ));
+        try {
+          await batch.commit();
+          success += chunk.length;
+        } catch (e) {
+          console.error('Erro ao reabrir lote:', e);
+          failed.push(...chunk);
+        }
+      }
+
+      let msg = `${success} ${success === 1 ? 'reaberto' : 'reabertos'} com sucesso.`;
+      if (skipped) msg += `\n${skipped} ${skipped === 1 ? 'ignorado (já em andamento)' : 'ignorados (já em andamento)'}.`;
+      if (failed.length) msg += `\n${failed.length} falharam: ${failed.slice(0, 10).join(', ')}${failed.length > 10 ? '...' : ''}`;
+      alert(msg);
+      selectedIds.clear();
+      loadAdminData();
     }
 
     async function reopenSession(sessionId) {
