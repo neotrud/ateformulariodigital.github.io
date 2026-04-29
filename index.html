@@ -215,9 +215,14 @@
       letter-spacing: 0.3px;
     }
 
-    .print-only { display: none; }
+    .print-only {
+      display: none;
+    }
+
     @media print {
-      .print-only { display: block !important; }
+      .print-only {
+        display: block !important;
+      }
     }
 
     .form-header .sub {
@@ -267,6 +272,7 @@
     .g4 {
       grid-template-columns: 1fr 1fr 1fr 1fr;
     }
+
 
     .field {
       display: flex;
@@ -2096,7 +2102,8 @@
           <div class="field"><label>Marca do Veículo</label><input type="text" data-field="es2-marca-veic"></div>
           <div class="field"><label>Ano de Fabricação</label><input type="text" data-field="es2-ano"></div>
         </div>
-        <div class="grid g2" style="margin-bottom:14px;">
+        <div class="grid g3" style="margin-bottom:14px;">
+          <div class="field"><label>Frota</label><input type="text" data-field="es2-frota"></div>
           <div class="field"><label>Nome do Motorista</label><input type="text" data-field="es2-motorista"></div>
           <div class="field"><label>Matrícula do Motorista</label><input type="text" placeholder="Matrícula"
               data-field="es2-cpf-mot"></div>
@@ -2105,11 +2112,10 @@
           <div class="field">
             <label>Tipo de Equipamento</label>
             <div style="display:flex;gap:16px;margin-top:6px;">
-              <label class="checkbox-inline"><input type="radio" name="es2-tipo-equip" value="Escada Giratória">
-                Escada
-                Giratória</label>
-              <label class="checkbox-inline"><input type="radio" name="es2-tipo-equip" value="Cesta Aérea"> Cesta
-                Aérea</label>
+              <label class="checkbox-inline"><input type="checkbox" id="es2-tipo-escada"
+                  onchange="onTipoEquipChange('es2','escada')"> Escada Giratória</label>
+              <label class="checkbox-inline"><input type="checkbox" id="es2-tipo-cesta"
+                  onchange="onTipoEquipChange('es2','cesta')"> Cesta Aérea</label>
             </div>
           </div>
           <div class="field"><label>Marca do Equipamento</label><input type="text" data-field="es2-marca-equip"></div>
@@ -2383,7 +2389,8 @@
           <div class="field"><label>Marca do Veículo</label><input type="text" data-field="el2-marca-veic"></div>
           <div class="field"><label>Ano de Fabricação</label><input type="text" data-field="el2-ano"></div>
         </div>
-        <div class="grid g2" style="margin-bottom:14px;">
+        <div class="grid g3" style="margin-bottom:14px;">
+          <div class="field"><label>Frota</label><input type="text" data-field="el2-frota"></div>
           <div class="field"><label>Nome do Motorista</label><input type="text" data-field="el2-motorista"></div>
           <div class="field"><label>Matrícula do Motorista</label><input type="text" placeholder="Matrícula"
               data-field="el2-cpf-mot"></div>
@@ -2392,11 +2399,10 @@
           <div class="field">
             <label>Tipo de Equipamento</label>
             <div style="display:flex;gap:16px;margin-top:6px;">
-              <label class="checkbox-inline"><input type="radio" name="el2-tipo-equip" value="Escada Giratória">
-                Escada
-                Giratória</label>
-              <label class="checkbox-inline"><input type="radio" name="el2-tipo-equip" value="Cesta Aérea"> Cesta
-                Aérea</label>
+              <label class="checkbox-inline"><input type="checkbox" id="el2-tipo-escada"
+                  onchange="onTipoEquipChange('el2','escada')"> Escada Giratória</label>
+              <label class="checkbox-inline"><input type="checkbox" id="el2-tipo-cesta"
+                  onchange="onTipoEquipChange('el2','cesta')"> Cesta Aérea</label>
             </div>
           </div>
           <div class="field"><label>Marca do Equipamento</label><input type="text" data-field="el2-marca-equip"></div>
@@ -3665,6 +3671,53 @@
       ).join('');
     }
 
+    // ──────────── TIPO DE EQUIPAMENTO (ES2/EL2) ────────────
+    // Filtragem dinâmica do Check-list de Equipamento conforme o Tipo de Equipamento marcado.
+    const ESCADA_INDICES = [1, 2, 3, 4, 5];
+    const CESTA_INDICES = [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20];
+
+    function onTipoEquipChange(type, which) {
+      const escadaCb = document.getElementById(type + '-tipo-escada');
+      const cestaCb = document.getElementById(type + '-tipo-cesta');
+      if (!escadaCb || !cestaCb) return;
+      // Mutuamente exclusivos: clicar em um desmarca o outro
+      if (which === 'escada' && escadaCb.checked) cestaCb.checked = false;
+      if (which === 'cesta' && cestaCb.checked) escadaCb.checked = false;
+      // Limpar todos os checkboxes do checklist Equipamento ao trocar de tipo
+      const checklistDiv = document.getElementById('checklist-' + type + '-escada');
+      if (checklistDiv) {
+        checklistDiv.querySelectorAll('input[type="checkbox"]').forEach(cb => { cb.checked = false; });
+      }
+      applyTipoEquipFilter(type);
+      if (typeof scheduleAutoSave === 'function') scheduleAutoSave();
+    }
+
+    function applyTipoEquipFilter(type) {
+      const checklistDiv = document.getElementById('checklist-' + type + '-escada');
+      if (!checklistDiv) return;
+      const escadaChecked = document.getElementById(type + '-tipo-escada')?.checked;
+      const cestaChecked = document.getElementById(type + '-tipo-cesta')?.checked;
+      const items = checklistDiv.querySelectorAll('.checklist-item');
+      items.forEach((el, i) => {
+        let visible = (i === 0); // SEM EQUIPAMENTO sempre visível
+        if (escadaChecked && ESCADA_INDICES.includes(i)) visible = true;
+        else if (cestaChecked && CESTA_INDICES.includes(i)) visible = true;
+        el.style.display = visible ? '' : 'none';
+      });
+    }
+
+    function validateTipoEquip(formId) {
+      if (formId !== 'es2' && formId !== 'el2') return true;
+      const escada = document.getElementById(formId + '-tipo-escada')?.checked;
+      const cesta = document.getElementById(formId + '-tipo-cesta')?.checked;
+      const semEquip = document.getElementById('cl-checklist-' + formId + '-escada-0')?.checked;
+      if (escada || cesta || semEquip) return true;
+      alert('Marque o Tipo de Equipamento (Escada Giratória ou Cesta Aérea) ou a opção SEM EQUIPAMENTO antes de finalizar.');
+      const target = document.getElementById(formId + '-tipo-escada');
+      if (target) target.focus();
+      return false;
+    }
+
     // ════════════════════════════════════════════════════════
     // NAVIGATION
     // ════════════════════════════════════════════════════════
@@ -4245,6 +4298,9 @@
     renderTableQty(el2Kit, 'tb-el2-kit');
     renderChecklist(el2ChecklistVeiculo, 'checklist-el2-veiculo');
     renderChecklist(el2ChecklistEscada, 'checklist-el2-escada');
+    // Aplica o filtro inicial do checklist Equipamento (estado vazio → só SEM EQUIPAMENTO visível)
+    applyTipoEquipFilter('es2');
+    applyTipoEquipFilter('el2');
 
     // ════════════════════════════════════════════════════════
     // PHOTO UPLOAD HANDLER
@@ -4489,6 +4545,15 @@
         data[currentContratadaKey] = data[legacyFornecedorKey];
       }
 
+      // Migração retrocompatível: Tipo de Equipamento (ES2/EL2) — radio → checkbox
+      if ((formId === 'es2' || formId === 'el2') && data) {
+        const oldRadio = data['radio__' + formId + '-tipo-equip'];
+        const escadaKey = 'check__' + formId + '-tipo-escada';
+        const cestaKey = 'check__' + formId + '-tipo-cesta';
+        if (oldRadio === 'Escada Giratória' && data[escadaKey] === undefined) data[escadaKey] = true;
+        if (oldRadio === 'Cesta Aérea' && data[cestaKey] === undefined) data[cestaKey] = true;
+      }
+
       Object.entries(data).forEach(([key, value]) => {
         if (key.startsWith('radio__')) {
           const name = key.replace('radio__', '');
@@ -4544,6 +4609,9 @@
           if (el) el.value = value;
         }
       });
+
+      // Reaplicar filtro do checklist Equipamento conforme Tipo de Equipamento marcado
+      if (formId === 'es2' || formId === 'el2') applyTipoEquipFilter(formId);
     }
 
     // ── Auto-save ─────────────────────────────────────────────────────────────
@@ -4693,6 +4761,7 @@
       }
       if (!validateFormNC(currentFormType)) return;
       if (!validateContrato(currentFormType)) return;
+      if (!validateTipoEquip(currentFormType)) return;
       const confirma = confirm('Deseja realmente FINALIZAR este formulário?\n\nApós finalizado, o status será alterado para "Concluído" e os campos ficarão bloqueados para edição.');
       if (!confirma) return;
 
