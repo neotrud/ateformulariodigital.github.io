@@ -388,6 +388,40 @@
       white-space: pre-wrap;
     }
 
+    /* ───────── ANEXOS FOTOGRÁFICOS ───────── */
+    .thumbs {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 12px;
+      margin-top: 8px;
+    }
+
+    .thumb {
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      overflow: hidden;
+      background: #fff;
+      page-break-inside: avoid;
+    }
+
+    .thumb img {
+      display: block;
+      width: 100%;
+      height: auto;
+      max-height: 280px;
+      object-fit: contain;
+      background: #f4f6f9;
+    }
+
+    .thumb .thumb-cap {
+      font-size: 11px;
+      color: var(--text-light);
+      padding: 4px 8px;
+      text-align: center;
+      border-top: 1px solid var(--border);
+      background: #fafafa;
+    }
+
     @media print {
       body {
         background: white;
@@ -434,7 +468,8 @@
       .form-block,
       .pend.zero,
       .pend.has,
-      .section-title {
+      .section-title,
+      .nc-table tbody tr td[colspan] {
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
         color-adjust: exact !important;
@@ -602,6 +637,9 @@
         return ta - tb;
       });
 
+      // ── Processar fotos (redimensionar para reduzir peso do PDF) ──
+      await processAllPhotos(found, formType);
+
       // ── Tudo validado: renderizar ──
       window.__compilado = { formType, contrato, contratada, found };
       document.getElementById('status').style.display = 'none';
@@ -609,8 +647,68 @@
       root.style.display = 'block';
 
       const cover = renderCover({ formType, contrato, contratada, found });
+      const summary = renderSummaryPage(found, formType);
+      const vehicles = renderVehiclesPage(found, formType);
       const bodies = found.map((d, i) => renderForm(d, i + 1)).join('');
-      root.innerHTML = cover + bodies;
+      root.innerHTML = cover + summary + vehicles + bodies;
+    }
+
+    // ──────────── REDIMENSIONAMENTO DE FOTOS ────────────
+    function resizeImage(src, maxW, quality) {
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => {
+          try {
+            const ratio = Math.min(1, maxW / img.width);
+            const w = Math.max(1, Math.round(img.width * ratio));
+            const h = Math.max(1, Math.round(img.height * ratio));
+            const canvas = document.createElement('canvas');
+            canvas.width = w;
+            canvas.height = h;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(0, 0, w, h);
+            ctx.drawImage(img, 0, 0, w, h);
+            resolve(canvas.toDataURL('image/jpeg', quality));
+          } catch (e) {
+            console.warn('Falha ao redimensionar foto, usando original:', e);
+            resolve(src);
+          }
+        };
+        img.onerror = () => {
+          console.warn('Falha ao carregar imagem para redimensionar; usando original.');
+          resolve(src);
+        };
+        img.src = src;
+      });
+    }
+
+    async function processAllPhotos(found, formType) {
+      const photoKey = 'photos__preview-' + formType;
+      // Lista todas as tarefas {doc, indiceDaFoto}
+      const tasks = [];
+      found.forEach(d => {
+        const photos = (d.data && Array.isArray(d.data[photoKey])) ? d.data[photoKey] : [];
+        photos.forEach((_, i) => tasks.push({ d, i }));
+      });
+      const total = tasks.length;
+      if (total === 0) return;
+      let done = 0;
+      setStatus(`Processando fotos: 0 / ${total}...`, { spinner: true });
+
+      const BATCH = 4; // paralelismo controlado para não estourar memória
+      for (let i = 0; i < tasks.length; i += BATCH) {
+        const batch = tasks.slice(i, i + BATCH);
+        await Promise.all(batch.map(async t => {
+          const arr = t.d.data[photoKey];
+          const original = arr[t.i];
+          if (typeof original === 'string' && original.startsWith('data:')) {
+            arr[t.i] = await resizeImage(original, 400, 0.7);
+          }
+          done++;
+          setStatus(`Processando fotos: ${done} / ${total}...`, { spinner: true });
+        }));
+      }
     }
 
     // ──────────── HELPERS DE DADOS ────────────
@@ -668,24 +766,37 @@
             if (!isNaN(v) && v > 0) count++;
           }
         });
-        // Checklists não marcados — para cada item dos arrays, se não tem check__cl-... === true → pendência
-        const checklistDivIds = (t === 'moto')
-          ? [{ items: motoChecklistVeiculo, divId: 'checklist-moto-veiculo' }]
-          : t === 'es2'
-            ? [
-              { items: es2ChecklistVeiculo, divId: 'checklist-es2-veiculo' },
-              { items: es2ChecklistEscada, divId: 'checklist-es2-escada' }
-            ]
-            : [
-              { items: el2ChecklistVeiculo, divId: 'checklist-el2-veiculo' },
-              { items: el2ChecklistEscada, divId: 'checklist-el2-escada' }
-            ];
-        checklistDivIds.forEach(({ items, divId }) => {
-          items.forEach((_, i) => {
-            const key = 'check__cl-' + divId + '-' + i;
+        if (t === 'moto') {
+          // Moto: todos os itens do checklist contam (não há "veículo próprio/locado" nem "sem equipamento")
+          motoChecklistVeiculo.forEach((_, i) => {
+            const key = 'check__cl-checklist-moto-veiculo-' + i;
             if (!data[key]) count++;
           });
+          return count;
+        }
+
+        // ES2 / EL2: regras especiais
+        const veicArr = (t === 'es2') ? es2ChecklistVeiculo : el2ChecklistVeiculo;
+        const escArr = (t === 'es2') ? es2ChecklistEscada : el2ChecklistEscada;
+        const veicDivId = `checklist-${t}-veiculo`;
+        const escDivId = `checklist-${t}-escada`;
+
+        // Checklist Veículo: ignora índices 0 e 1 (Veículo Próprio / Locado — informativos)
+        veicArr.forEach((_, i) => {
+          if (i === 0 || i === 1) return;
+          if (!data['check__cl-' + veicDivId + '-' + i]) count++;
         });
+
+        // Checklist Escada: SEM EQUIPAMENTO marcado OU tipo não informado → 0 pendências.
+        // Caso contrário, conta apenas os índices do tipo escolhido (Escada ou Cesta).
+        const semEquip = data['check__cl-' + escDivId + '-0'] === true;
+        const tipo = getTipoEquipEsEl(data, t);
+        if (!semEquip && tipo) {
+          const indices = tipo === 'escada' ? ESCADA_INDICES_COMP : CESTA_INDICES_COMP;
+          indices.forEach(i => {
+            if (!data['check__cl-' + escDivId + '-' + i]) count++;
+          });
+        }
         return count;
       }
 
@@ -714,11 +825,30 @@
       else if (t === 'amb') body = renderAmb(d);
       else body = '<div class="section-empty">Tipo de formulário não suportado.</div>';
 
+      body += renderAttachments(d);
+
       return `
         <div class="form-block">
           ${renderSubHeader(d, ordinal)}
           <div class="form-card">${body}</div>
         </div>
+      `;
+    }
+
+    // ──────────── ANEXOS FOTOGRÁFICOS ────────────
+    function renderAttachments(d) {
+      const photoKey = 'photos__preview-' + d.formType;
+      const photos = (d.data && Array.isArray(d.data[photoKey])) ? d.data[photoKey] : [];
+      if (photos.length === 0) return '';
+      const items = photos.map((src, i) => `
+        <div class="thumb">
+          <img src="${src}" alt="Foto ${i + 1}">
+          <div class="thumb-cap">Foto ${i + 1}</div>
+        </div>
+      `).join('');
+      return `
+        <div class="section-title">Anexos Fotográficos — ${photos.length} ${photos.length === 1 ? 'foto' : 'fotos'}</div>
+        <div class="thumbs">${items}</div>
       `;
     }
 
@@ -964,6 +1094,7 @@
         { key: 'es2-modelo', label: 'Modelo do Veículo' },
         { key: 'es2-marca-veic', label: 'Marca do Veículo' },
         { key: 'es2-ano', label: 'Ano de Fabricação' },
+        { key: 'es2-frota', label: 'Frota' },
         { key: 'es2-motorista', label: 'Motorista' },
         { key: 'es2-cpf-mot', label: 'Matrícula do Motorista' },
         { keyRadio: 'es2-tipo-equip', label: 'Tipo de Equipamento' },
@@ -977,6 +1108,7 @@
         { key: 'el2-modelo', label: 'Modelo do Veículo' },
         { key: 'el2-marca-veic', label: 'Marca do Veículo' },
         { key: 'el2-ano', label: 'Ano de Fabricação' },
+        { key: 'el2-frota', label: 'Frota' },
         { key: 'el2-motorista', label: 'Motorista' },
         { key: 'el2-cpf-mot', label: 'Matrícula do Motorista' },
         { keyRadio: 'el2-tipo-equip', label: 'Tipo de Equipamento' },
@@ -987,9 +1119,17 @@
       ]
     };
 
-    function renderVeiculo(data, type) {
+    function renderVeiculo(data, type, extras) {
       const schema = veiculoSchemas[type] || [];
       const filled = [];
+      // Entradas derivadas (ex.: Tipo de Veículo a partir do checklist em ES2/EL2)
+      if (Array.isArray(extras)) {
+        extras.forEach(e => {
+          if (e && e.value !== undefined && String(e.value).trim() !== '') {
+            filled.push({ label: e.label, value: e.value, wide: !!e.wide });
+          }
+        });
+      }
       schema.forEach(f => {
         let val;
         if (f.keyRadio) val = data['radio__' + f.keyRadio];
@@ -1021,9 +1161,11 @@
     }
 
     // ──────────── CHECKLIST ────────────
-    function renderChecklistPendencias(items, divId, data, sectionLabel) {
+    function renderChecklistPendencias(items, divId, data, sectionLabel, skipIndices) {
+      const skip = skipIndices instanceof Set ? skipIndices : new Set();
       const naoMarcados = [];
       items.forEach((label, i) => {
+        if (skip.has(i)) return;
         const key = 'check__cl-' + divId + '-' + i;
         if (!data[key]) naoMarcados.push({ idx: i + 1, label });
       });
@@ -1038,6 +1180,46 @@
         <div class="section-title">${sectionLabel} — ${naoMarcados.length} ${naoMarcados.length === 1 ? 'item não conforme' : 'itens não conformes'}</div>
         <ul style="margin-left:20px; font-size:12px; line-height:1.6;">${lis}</ul>
       `;
+    }
+
+    // Tipo de Veículo (ES2/EL2): derivado do checklist (índices 0/1)
+    function getTipoVeiculoEsEl(data, type) {
+      const proprio = data['check__cl-checklist-' + type + '-veiculo-0'] === true;
+      const locado = data['check__cl-checklist-' + type + '-veiculo-1'] === true;
+      if (proprio && locado) return 'Próprio + Locado';
+      if (proprio) return 'Próprio';
+      if (locado) return 'Locado';
+      return 'Não informado';
+    }
+
+    // Tipo de Equipamento (ES2/EL2): suporta novo schema (checkbox) e legado (radio)
+    const ESCADA_INDICES_COMP = [1, 2, 3, 4, 5];
+    const CESTA_INDICES_COMP = [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20];
+
+    function getTipoEquipEsEl(data, type) {
+      if (data['check__' + type + '-tipo-escada'] === true) return 'escada';
+      if (data['check__' + type + '-tipo-cesta'] === true) return 'cesta';
+      const old = data['radio__' + type + '-tipo-equip'];
+      if (old === 'Escada Giratória') return 'escada';
+      if (old === 'Cesta Aérea') return 'cesta';
+      return null;
+    }
+
+    // Checklist do Equipamento (ES2/EL2):
+    //  - SEM EQUIPAMENTO marcado → "Itens não aplicáveis à equipe."
+    //  - Tipo não informado     → mesma mensagem (indica não aplicável)
+    //  - Escada / Cesta         → lista pendências apenas dos índices do tipo correspondente
+    function renderEscadaChecklist(items, divId, data, sectionLabel, type) {
+      const semEquip = data['check__cl-' + divId + '-0'] === true;
+      const tipo = getTipoEquipEsEl(data, type);
+      if (semEquip || !tipo) {
+        return `<div class="section-title">${sectionLabel}</div>
+          <div style="font-size:12px; color:var(--text); padding:6px 0;">Itens não aplicáveis à equipe.</div>`;
+      }
+      const allowed = new Set(tipo === 'escada' ? ESCADA_INDICES_COMP : CESTA_INDICES_COMP);
+      const skip = new Set([0]); // SEM EQUIPAMENTO sempre fora da lista
+      items.forEach((_, i) => { if (!allowed.has(i)) skip.add(i); });
+      return renderChecklistPendencias(items, divId, data, sectionLabel, skip);
     }
 
     // ──────────── MOTO ────────────
@@ -1065,9 +1247,17 @@
       const ferr = renderPendencyTable(ferramentasArr, `tb-${t}-ferramentas`, data, 'Ferramentas e Equipamentos — Pendências');
       const epis = renderPendencyTable(episArr, `tb-${t}-epis`, data, 'EPIs — Pendências');
       const kit = renderPendencyTable(kitArr, `tb-${t}-kit`, data, 'Kit Antirreprova — Pendências');
-      const veic = renderVeiculo(data, t);
-      const checkVeic = renderChecklistPendencias(checkVeicArr, `checklist-${t}-veiculo`, data, 'Check-list do Veículo');
-      const checkEsc = renderChecklistPendencias(checkEscArr, `checklist-${t}-escada`, data, 'Check-list do Equipamento (Escada / Cesta)');
+
+      // Tipo de Veículo deduzido do checklist (índices 0 = Próprio, 1 = Locado)
+      const tipoVeiculo = getTipoVeiculoEsEl(data, t);
+      const veic = renderVeiculo(data, t, [{ label: 'Tipo de Veículo', value: tipoVeiculo }]);
+
+      // Checklist do Veículo: pula índices 0 e 1 (movidos para a seção Veículo)
+      const checkVeic = renderChecklistPendencias(checkVeicArr, `checklist-${t}-veiculo`, data, 'Check-list do Veículo', new Set([0, 1]));
+
+      // Checklist do Equipamento (Escada/Cesta): se SEM EQUIPAMENTO marcado, oculta pendências
+      const checkEsc = renderEscadaChecklist(checkEscArr, `checklist-${t}-escada`, data, 'Check-list do Equipamento (Escada / Cesta)', t);
+
       return componentes + ferr + epis + kit + veic + checkVeic + checkEsc;
     }
 
@@ -1265,6 +1455,178 @@
     function renderAmb(d) {
       const data = d.data || {};
       return ambSections.map(s => renderAmbSection(s, data)).join('');
+    }
+
+    // ──────────── RESUMO DE PENDÊNCIAS (ES2 / EL2 / Moto) ────────────
+    function renderSummaryPage(found, formType) {
+      if (formType !== 'es2' && formType !== 'el2' && formType !== 'moto') return '';
+
+      const numForms = found.length;
+      const equipeLabel = numForms === 1 ? 'equipe' : 'equipes';
+
+      let sections;
+      if (formType === 'moto') {
+        sections = [
+          { label: 'Ferramental', items: motoFerramentas, tbodyId: 'tb-moto-ferramentas' },
+          { label: 'EPIs', items: motoEpis, tbodyId: 'tb-moto-epis' }
+        ];
+      } else {
+        const ferrArr = formType === 'es2' ? es2Ferramentas : el2Ferramentas;
+        const episArr = formType === 'es2' ? es2Epis : el2Epis;
+        const kitArr = formType === 'es2' ? es2Kit : el2Kit;
+        sections = [
+          { label: 'Ferramentas e Equipamentos', items: ferrArr, tbodyId: `tb-${formType}-ferramentas` },
+          { label: 'EPIs', items: episArr, tbodyId: `tb-${formType}-epis` },
+          { label: 'Kit Antirreprova', items: kitArr, tbodyId: `tb-${formType}-kit` }
+        ];
+      }
+
+      // Agrega qty por item através de todos os formulários
+      const rows = [];
+      sections.forEach(section => {
+        section.items.forEach(item => {
+          let total = 0;
+          found.forEach(d => {
+            const v = parseFloat((d.data || {})['qty__' + section.tbodyId + '__' + item.num]);
+            if (!isNaN(v) && v > 0) total += v;
+          });
+          if (total > 0) rows.push({ section: section.label, num: item.num, desc: item.desc, uni: item.uni, total });
+        });
+      });
+
+      let bodyHtml;
+      if (rows.length === 0) {
+        bodyHtml = '<div class="section-empty">Nenhuma pendência encontrada nos formulários compilados.</div>';
+      } else {
+        let currentSection = null;
+        const tableRows = rows.map(r => {
+          let sectionRow = '';
+          if (r.section !== currentSection) {
+            currentSection = r.section;
+            sectionRow = `<tr style="background:#eef2f7;"><td colspan="4" style="font-weight:700; padding:8px 10px; font-size:12px; color:var(--cemig-blue);">${escapeHtml(r.section)}</td></tr>`;
+          }
+          return sectionRow + `<tr>
+            <td class="item-num">${r.num}</td>
+            <td>${escapeHtml(r.desc)}</td>
+            <td style="text-align:center;">${escapeHtml(r.uni || '—')}</td>
+            <td style="text-align:center; font-weight:700; color:var(--warn);">${r.total}</td>
+          </tr>`;
+        }).join('');
+
+        bodyHtml = `
+          <table class="nc-table">
+            <thead>
+              <tr>
+                <th class="item-num">Item</th>
+                <th>Descrição</th>
+                <th style="width:50px; text-align:center;">Uni.</th>
+                <th style="width:90px; text-align:center;">Qtd. Pendente</th>
+              </tr>
+            </thead>
+            <tbody>${tableRows}</tbody>
+          </table>
+        `;
+      }
+
+      return `
+        <div class="form-block">
+          <div class="sub-header">
+            <div class="sh-title">Resumo das pendências referente a ${numForms} ${equipeLabel}.</div>
+          </div>
+          <div class="form-card">${bodyHtml}</div>
+        </div>
+      `;
+    }
+
+    // ──────────── PÁGINA DE VEÍCULOS (ES2 / EL2 / Moto) ────────────
+    function renderVehiclesPage(found, formType) {
+      if (formType !== 'es2' && formType !== 'el2' && formType !== 'moto') return '';
+
+      const rows = [];
+      found.forEach((d, i) => {
+        const data = d.data || {};
+        const placa = data[`${formType}-placa`] || '';
+        const marca = formType === 'moto' ? (data['moto-marca'] || '') : (data[`${formType}-marca-veic`] || '');
+        const modelo = data[`${formType}-modelo`] || '';
+        const ano = data[`${formType}-ano`] || '';
+
+        if (!placa && !marca && !modelo && !ano) return;
+
+        if (formType === 'moto') {
+          const prop = data['moto-veiculo-proprio'];
+          const loc = data['moto-veiculo-locado'];
+          let tipo = '—';
+          if (prop && loc) tipo = 'Próprio + Locado';
+          else if (prop) tipo = 'Próprio';
+          else if (loc) tipo = 'Locado';
+          rows.push({ ordinal: i + 1, placa, marca, modelo, ano, tipo });
+        } else {
+          const motorista = data[`${formType}-motorista`] || '';
+          const frota = data[`${formType}-frota`] || '';
+          const tipoVeic = getTipoVeiculoEsEl(data, formType);
+          rows.push({ ordinal: i + 1, placa, marca, modelo, ano, frota, motorista, tipoVeic });
+        }
+      });
+
+      if (rows.length === 0) return '';
+
+      const numVeic = rows.length;
+      const veicLabel = numVeic === 1 ? 'veículo inspecionado' : 'veículos inspecionados';
+
+      let thead, tbodyRows;
+      if (formType === 'moto') {
+        thead = `<tr>
+          <th class="item-num">#</th>
+          <th>Placa</th>
+          <th>Marca</th>
+          <th>Modelo</th>
+          <th style="text-align:center;">Ano de Fabricação</th>
+          <th>Tipo</th>
+        </tr>`;
+        tbodyRows = rows.map(r => `<tr>
+          <td class="item-num">${r.ordinal}</td>
+          <td>${escapeHtml(r.placa || '—')}</td>
+          <td>${escapeHtml(r.marca || '—')}</td>
+          <td>${escapeHtml(r.modelo || '—')}</td>
+          <td style="text-align:center;">${escapeHtml(r.ano || '—')}</td>
+          <td>${escapeHtml(r.tipo)}</td>
+        </tr>`).join('');
+      } else {
+        thead = `<tr>
+          <th class="item-num">#</th>
+          <th>Placa</th>
+          <th>Marca</th>
+          <th>Modelo</th>
+          <th style="text-align:center;">Ano de Fabricação</th>
+          <th>Frota</th>
+          <th>Motorista</th>
+          <th>Tipo de Veículo</th>
+        </tr>`;
+        tbodyRows = rows.map(r => `<tr>
+          <td class="item-num">${r.ordinal}</td>
+          <td>${escapeHtml(r.placa || '—')}</td>
+          <td>${escapeHtml(r.marca || '—')}</td>
+          <td>${escapeHtml(r.modelo || '—')}</td>
+          <td style="text-align:center;">${escapeHtml(r.ano || '—')}</td>
+          <td>${escapeHtml(r.frota || '—')}</td>
+          <td>${escapeHtml(r.motorista || '—')}</td>
+          <td>${escapeHtml(r.tipoVeic || '—')}</td>
+        </tr>`).join('');
+      }
+
+      return `
+        <div class="form-block">
+          <div class="sub-header">
+            <div class="sh-title">Veículos — ${numVeic} ${veicLabel}.</div>
+          </div>
+          <div class="form-card">
+            <table class="nc-table">
+              <thead>${thead}</thead>
+              <tbody>${tbodyRows}</tbody>
+            </table>
+          </div>
+        </div>
+      `;
     }
 
     // ──────────── RENDER DA CAPA ────────────
